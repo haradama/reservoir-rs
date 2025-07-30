@@ -4,13 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rand         = "0.8"
 reservoir-core = { path = "../core", default-features = false }
 reservoir-data = { path = "../data" }
 reservoir-eval = { path = "../eval" }
-rand_isaac = "0.4.0"
-ndarray = "0.16.1"
-ndarray-rand = "0.15.0"
+nalgebra = { version = "0.33.2", features=["rand"] }
+rand = "0.8"
 
 [features]
 default = []

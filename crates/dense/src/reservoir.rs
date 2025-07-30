@@ -1,52 +1,50 @@
-use ndarray::{Array, Array1, Array2};
-use ndarray_rand::rand_distr::uniform::SampleUniform;
-use ndarray_rand::{RandomExt, rand_distr::Uniform};
-use rand::{SeedableRng, rngs::StdRng};
-
+use nalgebra::{DMatrix, DVector};
+use rand::{distributions::Standard, rngs::StdRng, Rng, SeedableRng};
 use reservoir_core::{reservoir::Reservoir, types::*};
 
-pub struct DenseReservoir<S: Scalar + SampleUniform = f32> {
-    w_in: Array2<S>,
-    w: Array2<S>,
-    state: Array1<S>,
+pub struct DenseReservoir {
+    w_in: DMatrix<f32>,
+    w: DMatrix<f32>,
+    state: DVector<f32>,
 }
 
-impl<S: Scalar + SampleUniform> DenseReservoir<S> {
-    pub fn new(input_dim: usize, units: usize, spectral_radius: S, seed: u64) -> Self {
+impl DenseReservoir {
+    pub fn new(input_dim: usize, units: usize, spectral_radius: f32, seed: u64) -> Self {
         let mut rng = StdRng::seed_from_u64(seed);
-        let dist = Uniform::new(S::from(-0.5).unwrap(), S::from(0.5).unwrap());
+        let mut rand_mat = |r: usize, c: usize| {
+            DMatrix::from_fn(r, c, |_, _| rng.sample::<f32, _>(Standard) - 0.5)
+        };
 
-        let mut w = Array::random_using((units, units), &dist, &mut rng);
-        let w_in = Array::random_using((units, input_dim), &dist, &mut rng);
-        let max_abs = w.iter().fold(S::zero(), |m, v| m.max(v.abs()));
-        if max_abs > S::zero() {
-            w.mapv_inplace(|x| x * spectral_radius / max_abs);
+        let mut w = rand_mat(units, units);
+        let max_abs = w.iter().fold(0.0f32, |m, &v| m.max(v.abs()));
+        if max_abs > 0.0 {
+            w /= max_abs;
+            w *= spectral_radius;
         }
+        let w_in = rand_mat(units, input_dim);
 
         Self {
             w_in,
             w,
-            state: Array1::zeros(units),
+            state: DVector::zeros(units),
         }
     }
 }
 
-impl<S: Scalar + SampleUniform> Reservoir<S> for DenseReservoir<S> {
+impl Reservoir<f32> for DenseReservoir {
     fn reset(&mut self) {
-        self.state.fill(S::zero());
+        self.state.fill(0.0);
     }
 
-    fn step(&mut self, input: &Input<S>) -> &State<S> {
-        let pre = self.w.dot(&self.state) + self.w_in.dot(input);
-        self.state = pre.mapv(|v| v.tanh());
+    fn step(&mut self, input: &Input<f32>) -> &State<f32> {
+        self.state = &self.w * &self.state + &self.w_in * input;
+        self.state.apply(|x| *x = x.tanh());
         &self.state
     }
-
     fn dim(&self) -> usize {
         self.state.len()
     }
-
-    fn state(&self) -> &State<S> {
+    fn state(&self) -> &State<f32> {
         &self.state
     }
 }

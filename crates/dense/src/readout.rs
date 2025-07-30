@@ -1,34 +1,28 @@
-use ndarray::{Array1, Array2};
-
+use nalgebra::DVector;
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use reservoir_core::{readout::Readout, types::*};
 
-pub struct RidgeReadout<S: Scalar = f32> {
-    w_out: Array2<S>,
+pub struct RidgeReadout {
+    w_out: DVector<f32>, // (units)
 }
 
-impl<S: Scalar> RidgeReadout<S> {
+impl RidgeReadout {
     pub fn new(units: usize) -> Self {
         let mut rng = StdRng::seed_from_u64(1234);
-        let mut w = Array2::<S>::zeros((1, units));
-        for v in w.iter_mut() {
-            *v = S::from(rng.gen::<f32>() - 0.5).unwrap();
-        }
-        Self { w_out: w }
+        let w_out = DVector::from_fn(units, |_, _| rng.gen::<f32>() - 0.5);
+        Self { w_out }
     }
-
-    pub fn set_weights(&mut self, w: Array2<S>) {
+    pub fn set_weights(&mut self, w: DVector<f32>) {
         self.w_out = w;
     }
 }
 
-impl<S: Scalar> Readout<S> for RidgeReadout<S> {
-    fn predict(&self, state: &State<S>) -> Output<S> {
+impl Readout<f32> for RidgeReadout {
+    fn predict(&self, state: &State<f32>) -> Output<f32> {
         let y = self.w_out.dot(state);
-        Array1::from_vec(y.to_vec())
+        DVector::from_element(1, y)
     }
-
     fn output_dim(&self) -> usize {
-        self.w_out.nrows()
+        1
     }
 }
