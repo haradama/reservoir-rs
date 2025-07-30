@@ -1,31 +1,34 @@
+use super::{DenseReservoir, RidgeReadout};
+use crate::float::RealScalar;
 use nalgebra::{DMatrix, DVector};
 use reservoir_core::{reservoir::Reservoir, trainer::Trainer};
 
-use super::{DenseReservoir, RidgeReadout};
-
-pub struct RidgeTrainer {
-    pub ridge: f32,
+pub struct RidgeTrainer<S: RealScalar> {
+    pub ridge: S,
 }
-impl Default for RidgeTrainer {
+
+impl<S: RealScalar> Default for RidgeTrainer<S> {
     fn default() -> Self {
-        Self { ridge: 1e-6 }
+        Self {
+            ridge: S::from(1e-6).unwrap(),
+        }
     }
 }
 
-impl Trainer<DenseReservoir, RidgeReadout, f32> for RidgeTrainer {
+impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrainer<S> {
     type Error = ();
 
     fn fit(
         &mut self,
-        reservoir: &mut DenseReservoir,
-        readout: &mut RidgeReadout,
-        inputs: &[Vec<f32>],
-        targets: &[Vec<f32>],
+        reservoir: &mut DenseReservoir<S>,
+        readout: &mut RidgeReadout<S>,
+        inputs: &[Vec<S>],
+        targets: &[Vec<S>],
     ) -> Result<(), Self::Error> {
-        let n_sample = inputs.len();
+        let n = inputs.len();
         let dim_x = reservoir.dim();
-        let mut x_mat = DMatrix::<f32>::zeros(n_sample, dim_x);
-        let mut y_vec = DVector::<f32>::zeros(n_sample);
+        let mut x_mat = DMatrix::<S>::zeros(n, dim_x);
+        let mut y_vec = DVector::<S>::zeros(n);
 
         for (i, (u, t)) in inputs.iter().zip(targets).enumerate() {
             let state = reservoir.step(&DVector::from_vec(u.clone())).clone_owned();
@@ -33,10 +36,8 @@ impl Trainer<DenseReservoir, RidgeReadout, f32> for RidgeTrainer {
             y_vec[i] = t[0];
         }
 
-        let gram = &x_mat.transpose() * &x_mat
-            + DMatrix::<f32>::identity(dim_x, dim_x) * self.ridge;
-        let w = (y_vec.transpose() * x_mat)
-            * gram.try_inverse().expect("matrix inverse failed");
+        let gram = &x_mat.transpose() * &x_mat + DMatrix::<S>::identity(dim_x, dim_x) * self.ridge;
+        let w = (y_vec.transpose() * x_mat) * gram.try_inverse().expect("Gram inverse failed");
         readout.set_weights(DVector::from_row_slice(w.as_slice()));
         Ok(())
     }

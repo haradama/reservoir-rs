@@ -1,34 +1,38 @@
+use crate::float::RealScalar;
 use nalgebra::{DMatrix, DVector};
-use rand::{distributions::Standard, rngs::StdRng, Rng, SeedableRng};
+use num_traits::Float;
+use rand::{distributions::Uniform, rngs::StdRng, Rng, SeedableRng};
 use reservoir_core::{reservoir::Reservoir, types::*};
 
-pub struct DenseReservoir {
-    w_in: DMatrix<f32>,
-    w: DMatrix<f32>,
-    leaking_rate: f32,
+pub struct DenseReservoir<S: RealScalar> {
+    w_in: DMatrix<S>,
+    w: DMatrix<S>,
+    leaking_rate: S,
     input_dim: usize,
 
-    res_state: DVector<f32>,
-    ext_state: DVector<f32>,
+    res_state: DVector<S>,
+    ext_state: DVector<S>,
 }
 
-impl DenseReservoir {
+impl<S: RealScalar> DenseReservoir<S> {
     pub fn new(
         input_dim: usize,
         units: usize,
-        spectral_radius: f32,
-        input_scaling: f32,
-        leaking_rate: f32,
+        spectral_radius: S,
+        input_scaling: S,
+        leaking_rate: S,
         seed: u64,
     ) -> Self {
         let mut rng = StdRng::seed_from_u64(seed);
-        let mut rand_mat = |r: usize, c: usize| {
-            DMatrix::from_fn(r, c, |_, _| rng.sample::<f32, _>(Standard) - 0.5)
-        };
+        let dist = Uniform::new(S::from(-0.5).unwrap(), S::from(0.5).unwrap());
+        let mut rand_mat = |r: usize, c: usize| DMatrix::from_fn(r, c, |_, _| rng.sample(&dist));
 
         let mut w = rand_mat(units, units);
-        let max_abs = w.iter().fold(0.0f32, |m, &v| m.max(v.abs()));
-        if max_abs > 0.0 {
+        // normalize & scale
+        let max_abs = w
+            .iter()
+            .fold(S::zero(), |m, &v| Float::max(m, Float::abs(v)));
+        if max_abs != S::zero() {
             w /= max_abs;
             w *= spectral_radius;
         }
@@ -45,8 +49,8 @@ impl DenseReservoir {
         }
     }
 
-    fn build_ext_state(&mut self, input: &Input<f32>) {
-        self.ext_state[0] = 1.0;
+    fn build_ext_state(&mut self, input: &Input<S>) {
+        self.ext_state[0] = S::one();
         self.ext_state.rows_mut(1, self.input_dim).copy_from(input);
         self.ext_state
             .rows_mut(1 + self.input_dim, self.res_state.len())
@@ -54,17 +58,17 @@ impl DenseReservoir {
     }
 }
 
-impl Reservoir<f32> for DenseReservoir {
+impl<S: RealScalar> Reservoir<S> for DenseReservoir<S> {
     fn reset(&mut self) {
-        self.res_state.fill(0.0);
-        self.ext_state.fill(0.0);
+        self.res_state.fill(S::zero());
+        self.ext_state.fill(S::zero());
     }
 
-    fn step(&mut self, input: &Input<f32>) -> &State<f32> {
+    fn step(&mut self, input: &Input<S>) -> &State<S> {
         let pre = &self.w * &self.res_state + &self.w_in * input;
-        let tanh = pre.map(|x| x.tanh());
-        self.res_state = (1.0 - self.leaking_rate) * &self.res_state + self.leaking_rate * tanh;
-
+        let tanh = pre.map(|x| Float::tanh(x));
+        self.res_state =
+            &self.res_state * (S::one() - self.leaking_rate) + tanh * self.leaking_rate;
         self.build_ext_state(input);
         &self.ext_state
     }
@@ -72,8 +76,7 @@ impl Reservoir<f32> for DenseReservoir {
     fn dim(&self) -> usize {
         self.ext_state.len()
     }
-
-    fn state(&self) -> &State<f32> {
+    fn state(&self) -> &State<S> {
         &self.ext_state
     }
 }

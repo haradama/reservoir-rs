@@ -1,4 +1,5 @@
 mod esn;
+mod float;
 mod readout;
 mod reservoir;
 pub use esn::{ESNBuilder, EchoStateNetwork};

@@ -9,6 +9,7 @@ reservoir-data = { path = "../data" }
 reservoir-eval = { path = "../eval" }
 nalgebra = { version = "0.33.2", features=["rand"] }
 rand = "0.8"
+num-traits = "0.2.19"
 
 [features]
 default = []
