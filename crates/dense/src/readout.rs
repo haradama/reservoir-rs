@@ -1,5 +1,6 @@
 use ndarray::{Array1, Array2};
 
+use rand::{rngs::StdRng, Rng, SeedableRng};
 use reservoir_core::{readout::Readout, types::*};
 
 pub struct RidgeReadout<S: Scalar = f32> {
@@ -8,9 +9,12 @@ pub struct RidgeReadout<S: Scalar = f32> {
 
 impl<S: Scalar> RidgeReadout<S> {
     pub fn new(units: usize) -> Self {
-        Self {
-            w_out: Array2::zeros((1, units)),
+        let mut rng = StdRng::seed_from_u64(1234);
+        let mut w = Array2::<S>::zeros((1, units));
+        for v in w.iter_mut() {
+            *v = S::from(rng.gen::<f32>() - 0.5).unwrap();
         }
+        Self { w_out: w }
     }
 
     pub fn set_weights(&mut self, w: Array2<S>) {

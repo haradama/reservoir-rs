@@ -1,7 +1,8 @@
-mod reservoir;
-mod readout;
 mod esn;
-
-pub use reservoir::DenseReservoir;
-pub use readout::RidgeReadout;
+mod readout;
+mod reservoir;
 pub use esn::{ESNBuilder, EchoStateNetwork};
+pub use readout::RidgeReadout;
+pub use reservoir::DenseReservoir;
+pub mod trainer;
+pub use trainer::RidgeTrainer;

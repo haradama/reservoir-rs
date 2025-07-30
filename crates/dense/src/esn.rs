@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use super::{DenseReservoir, RidgeReadout};
 use ndarray_rand::rand_distr::uniform::SampleUniform;
-use reservoir_core::{readout::Readout, reservoir::Reservoir, types::*};
+use reservoir_core::{readout::Readout, reservoir::Reservoir, trainer::Trainer, types::*};
 
 pub struct EchoStateNetwork<S = f32, R = DenseReservoir<S>, O = RidgeReadout<S>> {
     pub reservoir: R,
@@ -16,9 +16,19 @@ where
     R: Reservoir<S>,
     O: Readout<S>,
 {
-    pub fn predict(&mut self, u: &Input<S>) -> Output<S> {
-        let state = self.reservoir.step(u);
+    pub fn predict(&mut self, input: &Input<S>) -> Output<S> {
+        let state = self.reservoir.step(input);
         self.readout.predict(state)
+    }
+}
+
+impl EchoStateNetwork<f32, DenseReservoir<f32>, RidgeReadout<f32>> {
+    pub fn fit(&mut self, inputs: &[Vec<f32>], targets: &[Vec<f32>], ridge: f32) {
+        use crate::trainer::RidgeTrainer;
+        let mut trainer = RidgeTrainer { ridge };
+        trainer
+            .fit(&mut self.reservoir, &mut self.readout, inputs, targets)
+            .unwrap();
     }
 }
 
@@ -63,7 +73,7 @@ where
         let reservoir =
             DenseReservoir::new(self.input_dim, self.units, self.spectral_radius, self.seed);
         let readout = RidgeReadout::new(self.units);
-        EchoStateNetwork::<S, DenseReservoir<S>, RidgeReadout<S>> {
+        EchoStateNetwork {
             reservoir,
             readout,
             _marker: PhantomData,

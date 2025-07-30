@@ -15,3 +15,7 @@ where
         targets: &[Vec<S>],
     ) -> Result<(), Self::Error>;
 }
+
+pub struct RidgeParams<S: Scalar> {
+    pub ridge: S,
+}
