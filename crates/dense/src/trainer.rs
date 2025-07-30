@@ -22,11 +22,10 @@ impl Trainer<DenseReservoir, RidgeReadout, f32> for RidgeTrainer {
         inputs: &[Vec<f32>],
         targets: &[Vec<f32>],
     ) -> Result<(), Self::Error> {
-        let n = inputs.len();
-        let units = reservoir.dim();
-
-        let mut x_mat = DMatrix::<f32>::zeros(n, units);
-        let mut y_vec = DVector::<f32>::zeros(n);
+        let n_sample = inputs.len();
+        let dim_x = reservoir.dim();
+        let mut x_mat = DMatrix::<f32>::zeros(n_sample, dim_x);
+        let mut y_vec = DVector::<f32>::zeros(n_sample);
 
         for (i, (u, t)) in inputs.iter().zip(targets).enumerate() {
             let state = reservoir.step(&DVector::from_vec(u.clone())).clone_owned();
@@ -34,10 +33,10 @@ impl Trainer<DenseReservoir, RidgeReadout, f32> for RidgeTrainer {
             y_vec[i] = t[0];
         }
 
-        let gram =
-            &x_mat.transpose() * &x_mat + DMatrix::<f32>::identity(units, units) * self.ridge;
-        let inv = gram.try_inverse().unwrap();
-        let w = (y_vec.transpose() * x_mat) * inv; // Row Vec
+        let gram = &x_mat.transpose() * &x_mat
+            + DMatrix::<f32>::identity(dim_x, dim_x) * self.ridge;
+        let w = (y_vec.transpose() * x_mat)
+            * gram.try_inverse().expect("matrix inverse failed");
         readout.set_weights(DVector::from_row_slice(w.as_slice()));
         Ok(())
     }

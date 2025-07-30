@@ -29,12 +29,6 @@ impl MackeyGlass {
         let mut history = VecDeque::with_capacity(history_len);
 
         if let Some(hist) = &params.history {
-            if hist.len() < history_len {
-                panic!(
-                    "Insufficient history: expected at least {} values.",
-                    history_len
-                );
-            }
             history.extend(hist[hist.len() - history_len..].iter().cloned());
         } else {
             let mut rng = match params.seed {
@@ -42,8 +36,7 @@ impl MackeyGlass {
                 None => StdRng::from_entropy(),
             };
             for _ in 0..history_len {
-                let noise = 0.2 * (rng.gen::<f64>() - 0.5);
-                history.push_back(params.x0 + noise);
+                history.push_back(params.x0 + rng.gen::<f64>() * 0.1);
             }
         }
 
@@ -56,34 +49,25 @@ impl MackeyGlass {
 
     pub fn step(&mut self) -> f64 {
         let xt = self.current_x;
-        let xtau = if self.params.tau == 0 {
-            0.0
-        } else {
-            let val = self.history.pop_front().unwrap();
-            self.history.push_back(xt);
-            val
+        let xtau = self.history.front().copied().unwrap();
+        let f = |x: f64, x_tau: f64, p: &MackeyGlassParams| {
+            -p.b * x + p.a * x_tau / (1. + x_tau.powi(p.n as i32))
         };
-        self.current_x = Self::rk4_step(xt, xtau, &self.params);
-        self.current_x
+        let h = self.params.h;
+        let k1 = h * f(xt, xtau, &self.params);
+        let k2 = h * f(xt + 0.5 * k1, xtau, &self.params);
+        let k3 = h * f(xt + 0.5 * k2, xtau, &self.params);
+        let k4 = h * f(xt + k3, xtau, &self.params);
+        let new_x = xt + (k1 + 2. * k2 + 2. * k3 + k4) / 6.;
+
+        self.history.pop_front();
+        self.history.push_back(new_x);
+        self.current_x = new_x;
+        new_x
     }
 
     pub fn generate(&mut self) -> Vec<f64> {
-        let mut result = Vec::with_capacity(self.params.steps);
-        for _ in 0..self.params.steps {
-            result.push(self.step());
-        }
-        result
-    }
-
-    fn rk4_step(xt: f64, xtau: f64, p: &MackeyGlassParams) -> f64 {
-        let f = |x: f64| -> f64 { -p.b * x + p.a * xtau / (1.0 + xtau.powi(p.n as i32)) };
-        let h = p.h;
-        let k1 = h * f(xt);
-        let k2 = h * f(xt + 0.5 * k1);
-        let k3 = h * f(xt + 0.5 * k2);
-        let k4 = h * f(xt + k3);
-
-        xt + (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0
+        (0..self.params.steps).map(|_| self.step()).collect()
     }
 }
 
@@ -94,8 +78,8 @@ fn main() {
         n: 10,
         tau: 17,
         x0: 1.2,
-        h: 1.0,
-        steps: 4000,
+        h: 0.1,
+        steps: 2000,
         seed: Some(42),
         history: None,
     });
@@ -105,9 +89,11 @@ fn main() {
     let inputs: Vec<Vec<f32>> = data[..data.len() - 1].iter().map(|&v| vec![v]).collect();
     let targets: Vec<Vec<f32>> = data[1..].iter().map(|&v| vec![v]).collect();
 
-    let mut esn = ESNBuilder::new(1) // 入力1次元
+    let mut esn = ESNBuilder::new(1)
         .units(200)
         .spectral_radius(0.9)
+        .leaking_rate(0.8)
+        .input_scaling(1.0)
         .seed(1)
         .build();
     esn.fit(&inputs, &targets, 1e-6);
