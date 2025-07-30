@@ -1,0 +1,12 @@
+[package]
+name    = "reservoir-core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ndarray       = { version = "0.16.1", default-features = false, features=["std"] }
+num-traits    = "0.2"
+
+[features]
+default = ["std"]
+std     = ["ndarray/std"]

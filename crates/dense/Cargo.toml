@@ -1,0 +1,14 @@
+[package]
+name    = "reservoir-dense"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rand         = "0.8"
+reservoir-core = { path = "../core", default-features = false }
+rand_isaac = "0.4.0"
+ndarray = "0.16.1"
+ndarray-rand = "0.15.0"
+
+[features]
+default = []
