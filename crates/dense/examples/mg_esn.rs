@@ -83,11 +83,10 @@ fn main() {
         seed: Some(42),
         history: None,
     });
-    let data_f64 = mg.generate();
-    let data: Vec<f32> = data_f64.into_iter().map(|v| v as f32).collect();
+    let data = mg.generate();
 
-    let inputs: Vec<Vec<f32>> = data[..data.len() - 1].iter().map(|&v| vec![v]).collect();
-    let targets: Vec<Vec<f32>> = data[1..].iter().map(|&v| vec![v]).collect();
+    let inputs: Vec<Vec<f64>> = data[..data.len() - 1].iter().map(|&v| vec![v]).collect();
+    let targets: Vec<Vec<f64>> = data[1..].iter().map(|&v| vec![v]).collect();
 
     let mut esn = ESNBuilder::new(1)
         .units(200)
@@ -98,7 +97,7 @@ fn main() {
         .build();
     esn.fit(&inputs, &targets, 1e-6);
 
-    let preds: Vec<f32> = inputs
+    let preds: Vec<f64> = inputs
         .iter()
         .map(|u| {
             use nalgebra::DVector;
@@ -106,7 +105,7 @@ fn main() {
         })
         .collect();
 
-    let y_true: Vec<f32> = targets.iter().map(|v| v[0]).collect();
+    let y_true: Vec<f64> = targets.iter().map(|v| v[0]).collect();
     println!("RMSE : {:.6}", rmse(&y_true, &preds));
     println!("R^2  : {:.6}", rsquare(&y_true, &preds));
 }

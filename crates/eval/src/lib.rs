@@ -1,26 +1,42 @@
-pub fn mse(y_true: &[f32], y_pred: &[f32]) -> f32 {
+use num_traits::Float;
+use std::iter::Sum;
+
+pub fn mse<T>(y_true: &[T], y_pred: &[T]) -> T
+where
+    T: Float + Sum<T>,
+{
     y_true
         .iter()
         .zip(y_pred)
-        .map(|(t, p)| (t - p).powi(2))
-        .sum::<f32>()
-        / y_true.len() as f32
+        .map(|(&t, &p)| (t - p).powi(2))
+        .sum::<T>()
+        / T::from(y_true.len()).unwrap()
 }
 
-pub fn nrmse(y_true: &[f32], y_pred: &[f32]) -> f32 {
-    let rmse = mse(y_true, y_pred).sqrt();
-    let range = y_true.iter().fold(f32::MIN, |a, &b| a.max(b))
-        - y_true.iter().fold(f32::MAX, |a, &b| a.min(b));
-    rmse / range
-}
-
-pub fn rmse(y_true: &[f32], y_pred: &[f32]) -> f32 {
+pub fn rmse<T>(y_true: &[T], y_pred: &[T]) -> T
+where
+    T: Float + Sum<T>,
+{
     mse(y_true, y_pred).sqrt()
 }
 
-pub fn rsquare(y_true: &[f32], y_pred: &[f32]) -> f32 {
-    let mean = y_true.iter().copied().sum::<f32>() / y_true.len() as f32;
-    let ss_tot: f32 = y_true.iter().map(|v| (v - mean).powi(2)).sum();
-    let ss_res: f32 = y_true.iter().zip(y_pred).map(|(t, p)| (t - p).powi(2)).sum();
-    1.0 - ss_res / ss_tot
+pub fn nrmse<T>(y_true: &[T], y_pred: &[T]) -> T
+where
+    T: Float + Sum<T>,
+{
+    let rmse = rmse(y_true, y_pred);
+    let min = y_true.iter().copied().fold(T::max_value(), T::min);
+    let max = y_true.iter().copied().fold(T::min_value(), T::max);
+    let range = max - min;
+    rmse / range
+}
+
+pub fn rsquare<T>(y_true: &[T], y_pred: &[T]) -> T
+where
+    T: Float + Sum<T>,
+{
+    let mean = y_true.iter().copied().sum::<T>() / T::from(y_true.len()).unwrap();
+    let ss_tot: T = y_true.iter().map(|&v| (v - mean).powi(2)).sum();
+    let ss_res: T = y_true.iter().zip(y_pred).map(|(&t, &p)| (t - p).powi(2)).sum();
+    T::one() - ss_res / ss_tot
 }
