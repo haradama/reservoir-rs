@@ -1,0 +1,10 @@
+[package]
+name    = "reservoir-train"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reservoir-core = { path = "../core", default-features = false, features = ["std"] }
+nalgebra       = { version = "0.33.2", features = ["rand", "std"] }
+rand = "0.8"
+num-traits = "0.2.19"

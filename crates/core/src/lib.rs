@@ -1,10 +1,15 @@
-pub mod prelude;
-pub mod readout;
-pub mod reservoir;
-pub mod trainer;
-pub mod types;
+#![cfg_attr(not(feature = "std"), no_std)]
 
-pub use readout::*;
-pub use reservoir::*;
-pub use trainer::*;
+extern crate alloc;
+
+pub mod types;
+pub mod reservoir;
+pub mod readout;
+pub mod trainer;
+pub mod prelude;
+pub mod traits;
+
 pub use types::*;
+pub use reservoir::*;
+pub use readout::*;
+pub use trainer::*;

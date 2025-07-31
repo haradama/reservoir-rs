@@ -1,5 +1,4 @@
-use super::{DenseReservoir, RidgeReadout};
-use crate::float::RealScalar;
+use crate::{float::RealScalar, readout::RidgeReadout, reservoir::DenseReservoir};
 use nalgebra::{DMatrix, DVector};
 use reservoir_core::{reservoir::Reservoir, trainer::Trainer};
 
@@ -16,7 +15,7 @@ impl<S: RealScalar> Default for RidgeTrainer<S> {
 }
 
 impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrainer<S> {
-    type Error = ();
+    type Error = &'static str;
 
     fn fit(
         &mut self,
@@ -25,8 +24,13 @@ impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrai
         inputs: &[Vec<S>],
         targets: &[Vec<S>],
     ) -> Result<(), Self::Error> {
+        if inputs.len() != targets.len() {
+            return Err("inputs and targets length mismatch");
+        }
+
         let n = inputs.len();
         let dim_x = reservoir.dim();
+
         let mut x_mat = DMatrix::<S>::zeros(n, dim_x);
         let mut y_vec = DVector::<S>::zeros(n);
 
@@ -37,7 +41,11 @@ impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrai
         }
 
         let gram = &x_mat.transpose() * &x_mat + DMatrix::<S>::identity(dim_x, dim_x) * self.ridge;
-        let w = (y_vec.transpose() * x_mat) * gram.try_inverse().expect("Gram inverse failed");
+        let gram_inv = gram
+            .try_inverse()
+            .ok_or("matrix inversion failed (singular)?")?;
+
+        let w = (y_vec.transpose() * x_mat) * gram_inv;
         readout.set_weights(DVector::from_row_slice(w.as_slice()));
         Ok(())
     }

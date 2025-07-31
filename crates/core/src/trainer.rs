@@ -1,4 +1,7 @@
+#![cfg_attr(not(feature = "std"), allow(unused_imports))]
+
 use crate::{readout::Readout, reservoir::Reservoir, types::Scalar};
+use alloc::vec::Vec;
 
 pub trait Trainer<R, O, S>
 where
@@ -7,6 +10,7 @@ where
     S: Scalar,
 {
     type Error;
+
     fn fit(
         &mut self,
         reservoir: &mut R,
