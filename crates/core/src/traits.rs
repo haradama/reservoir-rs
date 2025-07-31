@@ -1,7 +1,5 @@
-#![allow(clippy::missing_docs_in_private_items)]
-
 extern crate alloc;
-
+#[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
 
 pub trait Scalar: Copy + core::fmt::Debug + 'static + Send + Sync {}
@@ -24,7 +22,7 @@ pub trait Readout {
     fn predict(&self, state: &[Self::Scalar]) -> Self::Scalar;
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(not(feature = "std"))]
 mod trainer_trait {
     use super::{Readout, Reservoir};
     use alloc::vec::Vec;
@@ -46,5 +44,5 @@ mod trainer_trait {
     }
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(not(feature = "std"))]
 pub use trainer_trait::Trainer;

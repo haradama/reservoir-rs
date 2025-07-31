@@ -1,6 +1,7 @@
 pub mod data;
 pub mod esn;
 pub mod float;
+pub mod input;
 pub mod metrics;
 pub mod readout;
 pub mod reservoir;

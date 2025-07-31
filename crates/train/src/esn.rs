@@ -1,23 +1,29 @@
 //! Echo State Network high-level wrapper (training edition)
 
 use crate::{
-    float::RealScalar, readout::RidgeReadout, reservoir::DenseReservoir, trainer::RidgeTrainer,
+    float::RealScalar, input::IntoInput, readout::RidgeReadout, reservoir::DenseReservoir,
+    trainer::RidgeTrainer,
 };
-use reservoir_core::{types::{Input, Output}, Readout, Reservoir, Trainer};
+use reservoir_core::{
+    types::{Output},
+    Readout, Reservoir, Trainer,
+};
 
 pub struct EchoStateNetwork<S: RealScalar> {
     pub reservoir: DenseReservoir<S>,
-    pub readout:   RidgeReadout<S>,
+    pub readout: RidgeReadout<S>,
 }
 
 impl<S: RealScalar> EchoStateNetwork<S> {
-    /// 推論
-    pub fn predict(&mut self, input: &Input<S>) -> Output<S> {
-        let state = self.reservoir.step(input);
+    pub fn predict<I>(&mut self, input: I) -> Output<S>
+    where
+        I: IntoInput<S>,
+    {
+        let dv = input.into_dvector();
+        let state = self.reservoir.step(&dv);
         self.readout.predict(state)
     }
 
-    /// 学習
     pub fn fit(&mut self, inputs: &[Vec<S>], targets: &[Vec<S>], ridge: S) {
         let mut trainer = RidgeTrainer { ridge };
         trainer
@@ -25,21 +31,19 @@ impl<S: RealScalar> EchoStateNetwork<S> {
             .expect("training failed");
     }
 
-    /// 内部状態の次元 (バイアス + 入力 + ユニット)
     pub fn state_dim(&self) -> usize {
         self.reservoir.dim()
     }
 }
 
-/// ビルダー
 pub struct ESNBuilder<S: RealScalar> {
-    input_dim:      usize,
-    units:          usize,
+    input_dim: usize,
+    units: usize,
     spectral_radius: S,
-    input_scaling:  S,
-    leaking_rate:   S,
-    seed:           u64,
-    _marker:        core::marker::PhantomData<S>,
+    input_scaling: S,
+    leaking_rate: S,
+    seed: u64,
+    _marker: core::marker::PhantomData<S>,
 }
 
 impl<S: RealScalar> ESNBuilder<S> {

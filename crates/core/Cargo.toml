@@ -1,12 +1,17 @@
 [package]
-name    = "reservoir-core"
+name = "reservoir-core"
 version = "0.1.0"
 edition = "2021"
 
 [features]
 default = []
-std = ["nalgebra/std"]
+std = ["dep:nalgebra", "num-traits/std"]
 
 [dependencies]
-nalgebra   = { version = "0.33.2", default-features = false, features = ["alloc", "libm"] }
-num-traits = { version = "0.2.19", default-features = false, features = ["libm"] }
+nalgebra = { version = "0.33.2", optional = true, default-features = false, features = [
+    "alloc",
+    "libm",
+] }
+num-traits = { version = "0.2.19", default-features = false, features = [
+    "libm",
+] }

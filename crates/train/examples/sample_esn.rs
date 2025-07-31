@@ -31,10 +31,7 @@ fn main() {
 
     let preds: Vec<f32> = inputs
         .iter()
-        .map(|u| {
-            use nalgebra::DVector;
-            esn.predict(&DVector::from_vec(u.clone()))[0]
-        })
+        .map(|u| esn.predict(u.as_slice())[0]) 
         .collect();
 
     let y_true: Vec<f32> = targets.iter().map(|v| v[0]).collect();
