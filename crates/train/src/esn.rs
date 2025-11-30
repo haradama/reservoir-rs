@@ -3,9 +3,7 @@ use crate::{
     trainer::RidgeTrainer,
 };
 use nalgebra::DVector;
-use reservoir_core::{
-    Input, Readout, Reservoir, Trainer, types::Output
-};
+use reservoir_core::{types::Output, Input, Readout, Reservoir, Trainer};
 
 pub struct EchoStateNetwork<S: RealScalar> {
     pub reservoir: DenseReservoir<S>,
@@ -23,17 +21,9 @@ impl<S: RealScalar> EchoStateNetwork<S> {
     }
 
     pub fn fit(&mut self, inputs: &[Vec<S>], targets: &[Vec<S>], ridge: S) {
-        let inputs_dv: Vec<Input<S>> = inputs
-            .iter()
-            .cloned()
-            .map(DVector::from_vec)
-            .collect();
+        let inputs_dv: Vec<Input<S>> = inputs.iter().cloned().map(DVector::from_vec).collect();
 
-        let targets_dv: Vec<Output<S>> = targets
-            .iter()
-            .cloned()
-            .map(DVector::from_vec)
-            .collect();
+        let targets_dv: Vec<Output<S>> = targets.iter().cloned().map(DVector::from_vec).collect();
 
         let mut trainer = RidgeTrainer { ridge };
         trainer
@@ -53,6 +43,7 @@ impl<S: RealScalar> EchoStateNetwork<S> {
 
 pub struct ESNBuilder<S: RealScalar> {
     input_dim: usize,
+    output_dim: usize,
     units: usize,
     spectral_radius: S,
     input_scaling: S,
@@ -62,9 +53,10 @@ pub struct ESNBuilder<S: RealScalar> {
 }
 
 impl<S: RealScalar> ESNBuilder<S> {
-    pub fn new(input_dim: usize) -> Self {
+    pub fn new(input_dim: usize, output_dim: usize) -> Self {
         Self {
             input_dim,
+            output_dim,
             units: 100,
             spectral_radius: S::one(),
             input_scaling: S::one(),
@@ -104,7 +96,7 @@ impl<S: RealScalar> ESNBuilder<S> {
             self.leaking_rate,
             self.seed,
         );
-        let readout = RidgeReadout::new(reservoir.dim());
+        let readout = RidgeReadout::new(reservoir.dim(), self.output_dim, self.seed);
         EchoStateNetwork { reservoir, readout }
     }
 }
