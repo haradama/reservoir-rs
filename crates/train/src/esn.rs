@@ -1,3 +1,5 @@
+use std::usize;
+
 use crate::{
     float::RealScalar, input::IntoInput, readout::RidgeReadout, reservoir::DenseReservoir,
     trainer::RidgeTrainer,
@@ -20,7 +22,7 @@ impl<S: RealScalar> EchoStateNetwork<S> {
         self.readout.predict(state)
     }
 
-    pub fn fit(&mut self, inputs: &[Vec<S>], targets: &[Vec<S>], ridge: S) {
+    pub fn fit(&mut self, inputs: &[Vec<S>], targets: &[Vec<S>], ridge: S, washout: usize) {
         let inputs_dv: Vec<Input<S>> = inputs.iter().cloned().map(DVector::from_vec).collect();
 
         let targets_dv: Vec<Output<S>> = targets.iter().cloned().map(DVector::from_vec).collect();
@@ -32,6 +34,7 @@ impl<S: RealScalar> EchoStateNetwork<S> {
                 &mut self.readout,
                 &inputs_dv,
                 &targets_dv,
+                washout,
             )
             .expect("training failed");
     }

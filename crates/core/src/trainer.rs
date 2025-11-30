@@ -20,6 +20,7 @@ where
         readout: &mut O,
         inputs: &[Input<S>],
         targets: &[Output<S>],
+        washout: usize,
     ) -> Result<(), Self::Error>;
 }
 

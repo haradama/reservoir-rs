@@ -27,6 +27,7 @@ impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrai
         readout: &mut RidgeReadout<S>,
         inputs: &[Input<S>],
         targets: &[Output<S>],
+        washout: usize,
     ) -> Result<(), Self::Error> {
         if inputs.len() != targets.len() {
             return Err("inputs and targets length mismatch");
@@ -44,11 +45,14 @@ impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrai
 
         for (i, (u, t)) in inputs.iter().zip(targets).enumerate() {
             let state = reservoir.step(u);
-            for j in 0..dim_x {
-                x_mat[(i, j)] = state[j];
-            }
-            for j in 0..dim_y {
-                y_mat[(i, j)] = t[j];
+
+            if i >= washout {
+                for j in 0..dim_x {
+                    x_mat[(i, j)] = state[j];
+                }
+                for j in 0..dim_y {
+                    y_mat[(i, j)] = t[j];
+                }
             }
         }
 

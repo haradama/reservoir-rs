@@ -27,7 +27,7 @@ fn main() {
         .input_scaling(1.0)
         .seed(1)
         .build();
-    esn.fit(&inputs, &targets, 1e-6);
+    esn.fit(&inputs, &targets, 1e-6, 0);
 
     let preds: Vec<f32> = inputs
         .iter()
