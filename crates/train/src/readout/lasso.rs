@@ -3,12 +3,12 @@ use rand::{distributions::Uniform, rngs::StdRng, Rng, SeedableRng};
 use reservoir_core::{readout::Readout, types::*};
 
 #[derive(Debug, Clone)]
-pub struct RidgeReadout<S: Scalar> {
+pub struct LassoReadout<S: Scalar> {
     w_out: DMatrix<S>,
     output_dim: usize,
 }
 
-impl<S: Scalar> RidgeReadout<S> {
+impl<S: Scalar> LassoReadout<S> {
     pub fn new(input_dim: usize, output_dim: usize, seed: u64) -> Self {
         let mut rng = StdRng::seed_from_u64(seed);
 
@@ -30,7 +30,7 @@ impl<S: Scalar> RidgeReadout<S> {
     }
 }
 
-impl<S: Scalar> Readout<S> for RidgeReadout<S> {
+impl<S: Scalar> Readout<S> for LassoReadout<S> {
     fn predict(&self, state: &State<S>) -> Output<S> {
         &self.w_out * state
     }

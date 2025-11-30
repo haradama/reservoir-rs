@@ -20,21 +20,25 @@ fn main() {
     let inputs: Vec<Vec<f32>> = data[..data.len() - 1].iter().map(|&v| vec![v]).collect();
     let targets: Vec<Vec<f32>> = data[1..].iter().map(|&v| vec![v]).collect();
 
-    let mut esn = ESNBuilder::new(1)
+    let mut esn = ESNBuilder::new(1, 1)
         .units(200)
         .spectral_radius(0.9)
         .leaking_rate(0.8)
         .input_scaling(1.0)
         .seed(1)
         .build();
-    esn.fit(&inputs, &targets, 1e-6);
+    esn.fit(&inputs, &targets, 1e-6, 0);
 
     let preds: Vec<f32> = inputs
         .iter()
-        .map(|u| esn.predict(u.as_slice())[0]) 
+        .map(|u| esn.predict(u.as_slice())[0])
         .collect();
 
     let y_true: Vec<f32> = targets.iter().map(|v| v[0]).collect();
+
+    println!("--------------------------------------------------");
+    println!("Evaluation Results (Ridge)");
     println!("RMSE : {:.6}", rmse(&y_true, &preds));
     println!("R^2  : {:.6}", rsquare(&y_true, &preds));
+    println!("--------------------------------------------------");
 }

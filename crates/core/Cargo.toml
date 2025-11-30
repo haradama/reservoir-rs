@@ -8,6 +8,8 @@ default = []
 std = ["dep:nalgebra", "num-traits/std"]
 
 [dependencies]
+fixed = { version = "1.29.0", features = ["num-traits"] }
+cordic = "0.1.5"
 nalgebra = { version = "0.33.2", optional = true, default-features = false, features = [
     "alloc",
     "libm",
