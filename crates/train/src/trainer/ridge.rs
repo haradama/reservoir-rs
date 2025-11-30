@@ -1,5 +1,5 @@
 use crate::{float::RealScalar, readout::RidgeReadout, reservoir::DenseReservoir};
-use nalgebra::{DMatrix};
+use nalgebra::DMatrix;
 use reservoir_core::{
     reservoir::Reservoir,
     trainer::Trainer,
@@ -36,31 +36,25 @@ impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrai
             return Err("empty inputs");
         }
 
-        let n_samples = inputs.len();
         let dim_x = reservoir.dim();
         let dim_y = targets[0].len();
 
-        let mut x_mat = DMatrix::<S>::zeros(n_samples, dim_x);
-        let mut y_mat = DMatrix::<S>::zeros(n_samples, dim_y);
+        let mut xtx = DMatrix::<S>::zeros(dim_x, dim_x);
+        let mut xty = DMatrix::<S>::zeros(dim_x, dim_y);
 
         for (i, (u, t)) in inputs.iter().zip(targets).enumerate() {
             let state = reservoir.step(u);
 
             if i >= washout {
-                for j in 0..dim_x {
-                    x_mat[(i, j)] = state[j];
-                }
-                for j in 0..dim_y {
-                    y_mat[(i, j)] = t[j];
-                }
+                xtx.ger(S::one(), state, state, S::one());
+                xty.ger(S::one(), state, t, S::one());
             }
         }
 
-        let gram = &x_mat.transpose() * &x_mat + DMatrix::<S>::identity(dim_x, dim_x) * self.ridge;
-        let rhs = &x_mat.transpose() * &y_mat;
-
-        let gram_chol = gram.cholesky().ok_or("Cholesky failed")?;
-        let w_solved = gram_chol.solve(&rhs);
+        let gram_chol = xtx
+            .cholesky()
+            .ok_or("Cholesky failed (matrix might not be positive definite)")?;
+        let w_solved = gram_chol.solve(&xty);
 
         readout.set_weights(w_solved.transpose());
         Ok(())
