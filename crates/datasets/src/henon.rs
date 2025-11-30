@@ -1,5 +1,7 @@
 extern crate alloc;
 use alloc::vec::Vec;
+#[cfg(not(feature = "std"))]
+use num_traits::Float;
 
 #[derive(Clone, Debug)]
 pub struct HenonParams {
