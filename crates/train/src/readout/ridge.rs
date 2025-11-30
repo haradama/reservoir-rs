@@ -11,7 +11,9 @@ pub struct RidgeReadout<S: RealScalar> {
 impl<S: RealScalar> RidgeReadout<S> {
     pub fn new(dim: usize) -> Self {
         let mut rng = StdRng::seed_from_u64(1234);
-        let uni = Uniform::new(S::from(-0.5).unwrap(), S::from(0.5).unwrap());
+        let lo = S::from_f64(-0.5).expect("from_f64 failed");
+        let hi = S::from_f64( 0.5).expect("from_f64 failed");
+        let uni = Uniform::new(lo, hi);
         let w_out = DVector::from_fn(dim, |_, _| rng.sample(&uni));
         Self { w_out }
     }

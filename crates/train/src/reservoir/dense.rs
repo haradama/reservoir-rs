@@ -1,6 +1,5 @@
 use crate::float::RealScalar;
 use nalgebra::{DMatrix, DVector};
-use num_traits::Float;
 use rand::{distributions::Uniform, rngs::StdRng, Rng, SeedableRng};
 use reservoir_core::{reservoir::Reservoir, types::*};
 
@@ -26,14 +25,13 @@ impl<S: RealScalar> DenseReservoir<S> {
         seed: u64,
     ) -> Self {
         let mut rng = StdRng::seed_from_u64(seed);
-        let uni = Uniform::new(S::from(-0.5).unwrap(), S::from(0.5).unwrap());
+        let lo = S::from_f64(-0.5).expect("from_f64 failed");
+        let hi = S::from_f64( 0.5).expect("from_f64 failed");
+        let uni = Uniform::new(lo, hi);
         let mut rnd = |r: usize, c: usize| DMatrix::from_fn(r, c, |_, _| rng.sample(&uni));
 
-        // 内部結合行列
         let mut w = rnd(units, units);
-        let max_abs = w
-            .iter()
-            .fold(S::zero(), |m, &v| Float::max(m, Float::abs(v)));
+        let max_abs = w.iter().fold(S::zero(), |m, &v| m.max(v.abs()));
         if max_abs != S::zero() {
             w /= max_abs;
             w *= spectral_radius;
@@ -70,7 +68,7 @@ impl<S: RealScalar> Reservoir<S> for DenseReservoir<S> {
 
     fn step(&mut self, input: &Input<S>) -> &State<S> {
         let pre = &self.w * &self.res_state + &self.w_in * input;
-        let tanh = pre.map(|x| Float::tanh(x));
+        let tanh = pre.map(|x| x.tanh());
         self.res_state =
             &self.res_state * (S::one() - self.leaking_rate) + tanh * self.leaking_rate;
 

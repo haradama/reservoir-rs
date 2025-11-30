@@ -13,7 +13,7 @@ pub struct RidgeTrainer<S: RealScalar> {
 impl<S: RealScalar> Default for RidgeTrainer<S> {
     fn default() -> Self {
         Self {
-            ridge: S::from(1e-6).unwrap(),
+            ridge: S::from_f64(1e-6).expect("from_f64 failed"),
         }
     }
 }
