@@ -12,8 +12,8 @@ pub struct RidgeReadout<S: RealScalar> {
 impl<S: RealScalar> RidgeReadout<S> {
     pub fn new(input_dim: usize, output_dim: usize, seed: u64) -> Self {
         let mut rng = StdRng::seed_from_u64(seed);
-        let lo = S::from_f64(-0.5).unwrap();
-        let hi = S::from_f64(0.5).unwrap();
+        let lo = S::from_f64_val(-0.5);
+        let hi = S::from_f64_val(0.5);
         let uni = Uniform::new(lo, hi);
 
         let w_out = DMatrix::from_fn(output_dim, input_dim, |_, _| rng.sample(&uni));

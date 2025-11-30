@@ -15,9 +15,9 @@ pub struct LassoTrainer<S: RealScalar> {
 impl<S: RealScalar> Default for LassoTrainer<S> {
     fn default() -> Self {
         Self {
-            alpha: S::from_f64(1e-4).expect("failed to convert alpha"),
+            alpha: S::from_f64_val(1e-4),
             max_iter: 1000,
-            tol: S::from_f64(1e-4).expect("failed to convert tol"),
+            tol: S::from_f64_val(1e-4),
         }
     }
 }
@@ -96,7 +96,7 @@ impl<S: RealScalar> Trainer<DenseReservoir<S>, LassoReadout<S>, S> for LassoTrai
                         Self::soft_threshold(rho, self.alpha) / z_j
                     };
 
-                    let change = (new_w_j - w[j]).abs();
+                    let change = (new_w_j - w[j]).abs_val();
                     if change > max_change {
                         max_change = change;
                     }

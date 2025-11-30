@@ -25,13 +25,13 @@ impl<S: RealScalar> DenseReservoir<S> {
         seed: u64,
     ) -> Self {
         let mut rng = StdRng::seed_from_u64(seed);
-        let lo = S::from_f64(-0.5).expect("from_f64 failed");
-        let hi = S::from_f64( 0.5).expect("from_f64 failed");
+        let lo = S::from_f64_val(-0.5);
+        let hi = S::from_f64_val( 0.5);
         let uni = Uniform::new(lo, hi);
         let mut rnd = |r: usize, c: usize| DMatrix::from_fn(r, c, |_, _| rng.sample(&uni));
 
         let mut w = rnd(units, units);
-        let max_abs = w.iter().fold(S::zero(), |m, &v| m.max(v.abs()));
+        let max_abs = w.iter().fold(S::zero(), |m, &v| if v.abs_val() > m { v.abs_val() } else { m });
         if max_abs != S::zero() {
             w /= max_abs;
             w *= spectral_radius;
