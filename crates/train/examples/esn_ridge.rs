@@ -22,9 +22,9 @@ fn main() {
 
     let mut esn = ESNBuilder::new(1, 1)
         .units(200)
-        .spectral_radius(0.9)
+        .spectral_radius(1.5)
         .leaking_rate(0.8)
-        .input_scaling(1.0)
+        .input_scaling(1.5)
         .seed(1)
         .build();
     esn.fit(&inputs, &targets, 1e-6, 0);
