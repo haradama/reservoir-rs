@@ -3,7 +3,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use core::{
     any::Any,
-    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
 use cordic::CordicNumber;
@@ -26,6 +26,7 @@ pub trait Scalar:
     + Sub<Output = Self>
     + Mul<Output = Self>
     + Div<Output = Self>
+    + Neg<Output = Self>
     + AddAssign
     + SubAssign
     + MulAssign

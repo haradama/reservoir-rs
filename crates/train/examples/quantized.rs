@@ -58,21 +58,19 @@ fn main() {
         .collect();
 
     let y_true: Vec<f64> = targets.iter().map(|v| v[0]).collect();
-    println!("# Fixed");
-    println!(
-        "RMSE: {:.6}, R^2: {:.6}",
-        rmse(&y_true, &preds_fixed),
-        rsquare(&y_true, &preds_fixed)
-    );
+    println!("--------------------------------------------------");
+    println!("Evaluation Results (Fixed)");
+    println!("RMSE : {:.6}", rmse(&y_true, &preds_fixed));
+    println!("R^2  : {:.6}", rsquare(&y_true, &preds_fixed));
+    println!("--------------------------------------------------");
 
     let preds_float: Vec<f64> = inputs
         .iter()
         .map(|u| esn_float.predict(u.as_slice())[0])
         .collect();
-    println!("# Float");
-    println!(
-        "RMSE: {:.6}, R^2: {:.6}",
-        rmse(&y_true, &preds_float),
-        rsquare(&y_true, &preds_float)
-    );
+
+    println!("Evaluation Results (Float)");
+    println!("RMSE : {:.6}", rmse(&y_true, &preds_float));
+    println!("R^2  : {:.6}", rsquare(&y_true, &preds_float));
+    println!("--------------------------------------------------");
 }

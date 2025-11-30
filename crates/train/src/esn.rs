@@ -59,7 +59,7 @@ where
 
 impl<S> EchoStateNetwork<S, DenseReservoir<S>, LassoReadout<S>>
 where
-    S: RealScalar,
+    S: Scalar,
 {
     pub fn fit_lasso(
         &mut self,

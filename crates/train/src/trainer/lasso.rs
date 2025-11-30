@@ -1,18 +1,19 @@
-use crate::{float::RealScalar, readout::LassoReadout, reservoir::DenseReservoir};
+use crate::{readout::LassoReadout, reservoir::DenseReservoir};
 use nalgebra::{DMatrix, DVector};
 use reservoir_core::{
     reservoir::Reservoir,
     trainer::Trainer,
     types::{Input, Output},
+    Scalar,
 };
 
-pub struct LassoTrainer<S: RealScalar> {
+pub struct LassoTrainer<S: Scalar> {
     pub alpha: S,
     pub max_iter: usize,
     pub tol: S,
 }
 
-impl<S: RealScalar> Default for LassoTrainer<S> {
+impl<S: Scalar> Default for LassoTrainer<S> {
     fn default() -> Self {
         Self {
             alpha: S::from_f64_val(1e-4),
@@ -22,7 +23,7 @@ impl<S: RealScalar> Default for LassoTrainer<S> {
     }
 }
 
-impl<S: RealScalar> LassoTrainer<S> {
+impl<S: Scalar> LassoTrainer<S> {
     pub fn new(alpha: S, max_iter: usize, tol: S) -> Self {
         Self {
             alpha,
@@ -42,7 +43,7 @@ impl<S: RealScalar> LassoTrainer<S> {
     }
 }
 
-impl<S: RealScalar> Trainer<DenseReservoir<S>, LassoReadout<S>, S> for LassoTrainer<S> {
+impl<S: Scalar> Trainer<DenseReservoir<S>, LassoReadout<S>, S> for LassoTrainer<S> {
     type Error = &'static str;
 
     fn fit(
@@ -87,9 +88,7 @@ impl<S: RealScalar> Trainer<DenseReservoir<S>, LassoReadout<S>, S> for LassoTrai
                 for j in 0..dim_x {
                     let dot = xtx.row(j).dot(&w.transpose());
                     let rho = y_corr[j] - dot + xtx[(j, j)] * w[j];
-                    
                     let z_j = xtx[(j, j)];
-                    
                     let new_w_j = if z_j == S::zero() {
                         S::zero()
                     } else {
