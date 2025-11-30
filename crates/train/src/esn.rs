@@ -1,8 +1,11 @@
 use std::{marker::PhantomData, usize};
 
 use crate::{
-    float::RealScalar, input::IntoInput, readout::RidgeReadout, reservoir::DenseReservoir,
-    trainer::RidgeTrainer,
+    float::RealScalar,
+    input::IntoInput,
+    readout::{LassoReadout, RidgeReadout},
+    reservoir::DenseReservoir,
+    trainer::{LassoTrainer, RidgeTrainer},
 };
 use nalgebra::DVector;
 use reservoir_core::{types::Output, Input, Readout, Reservoir, Scalar, Trainer};
@@ -45,6 +48,35 @@ where
 
     pub fn state_dim(&self) -> usize {
         self.reservoir.dim()
+    }
+}
+
+impl<S> EchoStateNetwork<S, DenseReservoir<S>, LassoReadout<S>>
+where
+    S: RealScalar,
+{
+    pub fn fit_lasso(
+        &mut self,
+        inputs: &[Vec<S>],
+        targets: &[Vec<S>],
+        alpha: S,
+        max_iter: usize,
+        tol: S,
+        washout: usize,
+    ) {
+        let inputs_dv: Vec<Input<S>> = inputs.iter().cloned().map(DVector::from_vec).collect();
+        let targets_dv: Vec<Output<S>> = targets.iter().cloned().map(DVector::from_vec).collect();
+
+        let mut trainer = LassoTrainer::new(alpha, max_iter, tol);
+        trainer
+            .fit(
+                &mut self.reservoir,
+                &mut self.readout,
+                &inputs_dv,
+                &targets_dv,
+                washout,
+            )
+            .expect("lasso training failed");
     }
 }
 
@@ -104,6 +136,24 @@ impl<S: RealScalar> ESNBuilder<S> {
             self.seed,
         );
         let readout = RidgeReadout::new(reservoir.dim(), self.output_dim, self.seed);
+
+        EchoStateNetwork {
+            reservoir,
+            readout,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn build_lasso(self) -> EchoStateNetwork<S, DenseReservoir<S>, LassoReadout<S>> {
+        let reservoir = DenseReservoir::new(
+            self.input_dim,
+            self.units,
+            self.spectral_radius,
+            self.input_scaling,
+            self.leaking_rate,
+            self.seed,
+        );
+        let readout = LassoReadout::new(reservoir.dim(), self.output_dim, self.seed);
 
         EchoStateNetwork {
             reservoir,

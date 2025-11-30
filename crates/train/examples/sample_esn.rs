@@ -21,7 +21,7 @@ fn main() {
     let targets: Vec<Vec<f32>> = data[1..].iter().map(|&v| vec![v]).collect();
 
     let mut esn = ESNBuilder::new(1, 1)
-        .units(20)
+        .units(200)
         .spectral_radius(0.9)
         .leaking_rate(0.8)
         .input_scaling(1.0)
