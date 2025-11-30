@@ -1,4 +1,4 @@
-use nalgebra::{DMatrix, DVector};
+use nalgebra::{DMatrix, DVector, Normed};
 use rand::{distributions::Uniform, Rng, SeedableRng};
 use reservoir_core::{reservoir::Reservoir, types::*};
 
