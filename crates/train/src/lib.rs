@@ -13,3 +13,9 @@ pub use metrics::*;
 pub use readout::RidgeReadout;
 pub use reservoir::DenseReservoir;
 pub use trainer::RidgeTrainer;
+
+#[cfg(feature = "std")]
+pub type RngType = rand::rngs::StdRng;
+
+#[cfg(not(feature = "std"))]
+pub type RngType = rand::rngs::SmallRng;

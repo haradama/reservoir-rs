@@ -1,4 +1,4 @@
-use rand::rngs::StdRng;
+use crate::RngType;
 use rand::{Rng, SeedableRng};
 use std::collections::VecDeque;
 
@@ -29,8 +29,8 @@ impl MackeyGlass {
             history.extend(hist[hist.len() - history_len..].iter().cloned());
         } else {
             let mut rng = match params.seed {
-                Some(s) => StdRng::seed_from_u64(s),
-                None => StdRng::from_entropy(),
+                Some(s) => RngType::seed_from_u64(s),
+                None => RngType::from_entropy(),
             };
             for _ in 0..history_len {
                 history.push_back(params.x0 + rng.gen::<f64>() * 0.1);

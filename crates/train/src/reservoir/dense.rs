@@ -1,6 +1,8 @@
 use nalgebra::{DMatrix, DVector};
-use rand::{distributions::Uniform, rngs::StdRng, Rng, SeedableRng};
+use rand::{distributions::Uniform, Rng, SeedableRng};
 use reservoir_core::{reservoir::Reservoir, types::*};
+
+use crate::RngType;
 
 #[derive(Debug, Clone)]
 pub struct DenseReservoir<S: Scalar> {
@@ -23,7 +25,7 @@ impl<S: Scalar> DenseReservoir<S> {
         leaking_rate: S,
         seed: u64,
     ) -> Self {
-        let mut rng = StdRng::seed_from_u64(seed);
+        let mut rng = RngType::seed_from_u64(seed);
         let uni = Uniform::new(-0.5f64, 0.5f64);
         let mut rnd =
             |r: usize, c: usize| DMatrix::from_fn(r, c, |_, _| S::from_f64_val(rng.sample(&uni)));

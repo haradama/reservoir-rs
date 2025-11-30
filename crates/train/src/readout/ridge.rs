@@ -1,5 +1,6 @@
+use crate::RngType;
 use nalgebra::DMatrix;
-use rand::{distributions::Uniform, rngs::StdRng, Rng, SeedableRng};
+use rand::{distributions::Uniform, Rng, SeedableRng};
 use reservoir_core::{readout::Readout, types::*};
 
 #[derive(Debug, Clone)]
@@ -10,7 +11,7 @@ pub struct RidgeReadout<S: Scalar> {
 
 impl<S: Scalar> RidgeReadout<S> {
     pub fn new(input_dim: usize, output_dim: usize, seed: u64) -> Self {
-        let mut rng = StdRng::seed_from_u64(seed);
+        let mut rng = RngType::seed_from_u64(seed);
 
         let uni = Uniform::new(-0.5f64, 0.5f64);
         let w_out = DMatrix::from_fn(output_dim, input_dim, |_, _| {

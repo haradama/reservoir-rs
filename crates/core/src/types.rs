@@ -6,10 +6,12 @@ use core::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
+#[cfg(feature = "fixed_point")]
 use cordic::CordicNumber;
+#[cfg(feature = "fixed_point")]
 use fixed::{types::extra::LeEqU32, FixedI32};
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm", feature = "fixed_point"))]
 use nalgebra::{DMatrix, DVector};
 use num_traits::{One, Zero};
 
@@ -38,12 +40,13 @@ pub trait Scalar:
     fn abs_val(self) -> Self;
 }
 
+#[cfg(any(feature = "std", feature = "libm"))]
 macro_rules! impl_scalar_float {
     ($($t:ty),*) => {
         $(
             impl Scalar for $t {
                 fn activation(self) -> Self {
-                    self.tanh()
+                    num_traits::Float::tanh(self)
                 }
 
                 fn from_f64_val(v: f64) -> Self {
@@ -51,15 +54,17 @@ macro_rules! impl_scalar_float {
                 }
 
                 fn abs_val(self) -> Self {
-                    self.abs()
+                    num_traits::Float::abs(self)
                 }
             }
         )*
     };
 }
 
+#[cfg(any(feature = "std", feature = "libm"))]
 impl_scalar_float!(f32, f64);
 
+#[cfg(feature = "fixed_point")]
 impl<Frac> Scalar for FixedI32<Frac>
 where
     Frac: LeEqU32 + 'static + Send + Sync,
