@@ -31,14 +31,19 @@ impl<S: Scalar> DenseReservoir<S> {
             |r: usize, c: usize| DMatrix::from_fn(r, c, |_, _| S::from_f64_val(rng.sample(&uni)));
 
         let mut w = rnd(units, units);
-        let max_abs = w.iter().fold(
-            S::zero(),
-            |m, &v| if v.abs_val() > m { v.abs_val() } else { m },
-        );
+        let w_f64 = w.map(|x| x.to_f64_val());
+        let eigenvalues = w_f64.complex_eigenvalues();
+        
+        let current_rho = eigenvalues
+            .iter()
+            .map(|c| c.norm())
+            .fold(0.0f64, |a, b| a.max(b));
 
-        if max_abs != S::zero() {
-            w /= max_abs;
-            w *= spectral_radius;
+        let target_rho = spectral_radius.to_f64_val();
+        
+        if current_rho > 0.0 {
+            let scale = target_rho / current_rho;
+            w *= S::from_f64_val(scale);
         }
 
         let w_in = rnd(units, input_dim) * input_scaling;

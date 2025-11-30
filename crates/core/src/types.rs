@@ -35,6 +35,7 @@ pub trait Scalar:
 {
     fn activation(self) -> Self;
     fn from_f64_val(v: f64) -> Self;
+    fn to_f64_val(self) -> f64;
     fn abs_val(self) -> Self;
 }
 
@@ -49,6 +50,10 @@ macro_rules! impl_scalar_float {
 
                 fn from_f64_val(v: f64) -> Self {
                     v as $t
+                }
+
+                fn to_f64_val(self) -> f64 {
+                    self as f64
                 }
 
                 fn abs_val(self) -> Self {
@@ -90,6 +95,10 @@ where
 
     fn from_f64_val(v: f64) -> Self {
         Self::from_num(v)
+    }
+
+    fn to_f64_val(self) -> f64 {
+        self.to_num::<f64>()
     }
 
     fn abs_val(self) -> Self {
