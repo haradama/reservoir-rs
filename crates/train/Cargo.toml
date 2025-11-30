@@ -6,7 +6,7 @@ edition = "2021"
 [features]
 default = ["std"]
 std = ["reservoir-core/std", "nalgebra/std", "rand/std", "rand/std_rng"]
-libm = ["reservoir-core/libm", "nalgebra/libm"]
+libm = ["reservoir-core/libm", "nalgebra/libm", "num-traits/libm"]
 fixed_point = ["reservoir-core/fixed_point", "dep:fixed"]
 
 [dependencies]
