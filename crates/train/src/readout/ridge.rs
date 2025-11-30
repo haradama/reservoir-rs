@@ -3,6 +3,7 @@ use nalgebra::DVector;
 use rand::{distributions::Uniform, rngs::StdRng, Rng, SeedableRng};
 use reservoir_core::{readout::Readout, types::*};
 
+#[derive(Debug, Clone)]
 pub struct RidgeReadout<S: RealScalar> {
     w_out: DVector<S>,
 }

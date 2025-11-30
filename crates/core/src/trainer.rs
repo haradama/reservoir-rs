@@ -1,7 +1,10 @@
 #![cfg_attr(not(feature = "std"), allow(unused_imports))]
 
-use crate::{readout::Readout, reservoir::Reservoir, types::Scalar};
-use alloc::vec::Vec;
+use crate::{
+    readout::Readout,
+    reservoir::Reservoir,
+    types::{Input, Output, Scalar},
+};
 
 pub trait Trainer<R, O, S>
 where
@@ -15,8 +18,8 @@ where
         &mut self,
         reservoir: &mut R,
         readout: &mut O,
-        inputs: &[Vec<S>],
-        targets: &[Vec<S>],
+        inputs: &[Input<S>],
+        targets: &[Output<S>],
     ) -> Result<(), Self::Error>;
 }
 

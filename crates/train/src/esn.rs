@@ -1,12 +1,10 @@
-//! Echo State Network high-level wrapper (training edition)
-
 use crate::{
     float::RealScalar, input::IntoInput, readout::RidgeReadout, reservoir::DenseReservoir,
     trainer::RidgeTrainer,
 };
+use nalgebra::DVector;
 use reservoir_core::{
-    types::{Output},
-    Readout, Reservoir, Trainer,
+    Input, Readout, Reservoir, Trainer, types::Output
 };
 
 pub struct EchoStateNetwork<S: RealScalar> {
@@ -25,9 +23,26 @@ impl<S: RealScalar> EchoStateNetwork<S> {
     }
 
     pub fn fit(&mut self, inputs: &[Vec<S>], targets: &[Vec<S>], ridge: S) {
+        let inputs_dv: Vec<Input<S>> = inputs
+            .iter()
+            .cloned()
+            .map(DVector::from_vec)
+            .collect();
+
+        let targets_dv: Vec<Output<S>> = targets
+            .iter()
+            .cloned()
+            .map(DVector::from_vec)
+            .collect();
+
         let mut trainer = RidgeTrainer { ridge };
         trainer
-            .fit(&mut self.reservoir, &mut self.readout, inputs, targets)
+            .fit(
+                &mut self.reservoir,
+                &mut self.readout,
+                &inputs_dv,
+                &targets_dv,
+            )
             .expect("training failed");
     }
 

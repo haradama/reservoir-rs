@@ -7,7 +7,6 @@ pub mod reservoir;
 pub mod readout;
 pub mod trainer;
 pub mod prelude;
-pub mod traits;
 
 pub use types::*;
 pub use reservoir::*;

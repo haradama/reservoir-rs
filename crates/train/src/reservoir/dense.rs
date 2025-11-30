@@ -4,6 +4,7 @@ use num_traits::Float;
 use rand::{distributions::Uniform, rngs::StdRng, Rng, SeedableRng};
 use reservoir_core::{reservoir::Reservoir, types::*};
 
+#[derive(Debug, Clone)]
 pub struct DenseReservoir<S: RealScalar> {
     w_in: DMatrix<S>,
     w: DMatrix<S>,
