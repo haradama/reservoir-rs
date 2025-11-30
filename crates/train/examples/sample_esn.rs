@@ -35,6 +35,5 @@ fn main() {
         .collect();
 
     let y_true: Vec<f32> = targets.iter().map(|v| v[0]).collect();
-    println!("RMSE : {:.6}", rmse(&y_true, &preds));
-    println!("R^2  : {:.6}", rsquare(&y_true, &preds));
+    println!("RMSE: {:.6}, R^2: {:.6}", rmse(&y_true, &preds), rsquare(&y_true, &preds));
 }

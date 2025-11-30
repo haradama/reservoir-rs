@@ -24,6 +24,10 @@ impl<S: Scalar> RidgeReadout<S> {
         self.output_dim = w.nrows();
         self.w_out = w;
     }
+
+    pub fn weights(&self) -> &DMatrix<S> {
+        &self.w_out
+    }
 }
 
 impl<S: Scalar> Readout<S> for RidgeReadout<S> {

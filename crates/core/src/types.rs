@@ -1,7 +1,10 @@
 extern crate alloc;
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
-use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use core::{
+    any::Any,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
+};
 
 use cordic::CordicNumber;
 use fixed::{types::extra::LeEqU32, FixedI32};
@@ -16,6 +19,7 @@ pub trait Scalar:
     + Sync
     + core::fmt::Debug
     + 'static
+    + Any
     + Zero
     + One
     + Add<Output = Self>
