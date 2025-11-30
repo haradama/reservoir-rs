@@ -1,18 +1,22 @@
-use std::usize;
+use std::{marker::PhantomData, usize};
 
 use crate::{
     float::RealScalar, input::IntoInput, readout::RidgeReadout, reservoir::DenseReservoir,
     trainer::RidgeTrainer,
 };
 use nalgebra::DVector;
-use reservoir_core::{types::Output, Input, Readout, Reservoir, Trainer};
+use reservoir_core::{types::Output, Input, Readout, Reservoir, Scalar, Trainer};
 
-pub struct EchoStateNetwork<S: RealScalar> {
-    pub reservoir: DenseReservoir<S>,
-    pub readout: RidgeReadout<S>,
+pub struct EchoStateNetwork<S: Scalar, R, O> {
+    pub reservoir: R,
+    pub readout: O,
+    _marker: PhantomData<S>,
 }
 
-impl<S: RealScalar> EchoStateNetwork<S> {
+impl<S> EchoStateNetwork<S, DenseReservoir<S>, RidgeReadout<S>>
+where
+    S: RealScalar,
+{
     pub fn predict<I>(&mut self, input: I) -> Output<S>
     where
         I: IntoInput<S>,
@@ -65,7 +69,7 @@ impl<S: RealScalar> ESNBuilder<S> {
             input_scaling: S::one(),
             leaking_rate: S::one(),
             seed: 42,
-            _marker: core::marker::PhantomData,
+            _marker: PhantomData,
         }
     }
 
@@ -90,7 +94,7 @@ impl<S: RealScalar> ESNBuilder<S> {
         self
     }
 
-    pub fn build(self) -> EchoStateNetwork<S> {
+    pub fn build(self) -> EchoStateNetwork<S, DenseReservoir<S>, RidgeReadout<S>> {
         let reservoir = DenseReservoir::new(
             self.input_dim,
             self.units,
@@ -100,6 +104,11 @@ impl<S: RealScalar> ESNBuilder<S> {
             self.seed,
         );
         let readout = RidgeReadout::new(reservoir.dim(), self.output_dim, self.seed);
-        EchoStateNetwork { reservoir, readout }
+
+        EchoStateNetwork {
+            reservoir,
+            readout,
+            _marker: PhantomData,
+        }
     }
 }
