@@ -58,10 +58,10 @@ impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrai
             xtx[(i, i)] = xtx[(i, i)] + self.ridge;
         }
 
-        let gram_chol = xtx
-            .cholesky()
-            .ok_or("Cholesky failed (matrix might not be positive definite)")?;
-        let w_solved = gram_chol.solve(&xty);
+        let w_solved = xtx
+            .lu()
+            .solve(&xty)
+            .ok_or("Linear resolution failed (LU decomposition)")?;
 
         readout.set_weights(w_solved.transpose());
         Ok(())
