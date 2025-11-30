@@ -35,6 +35,9 @@ impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrai
         if inputs.is_empty() {
             return Err("empty inputs");
         }
+        if washout >= inputs.len() {
+            return Err("washout period is larger than or equal to input length");
+        }
 
         let dim_x = reservoir.dim();
         let dim_y = targets[0].len();
@@ -49,6 +52,10 @@ impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrai
                 xtx.ger(S::one(), state, state, S::one());
                 xty.ger(S::one(), state, t, S::one());
             }
+        }
+
+        for i in 0..dim_x {
+            xtx[(i, i)] = xtx[(i, i)] + self.ridge;
         }
 
         let gram_chol = xtx
