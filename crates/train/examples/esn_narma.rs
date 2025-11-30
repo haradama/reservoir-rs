@@ -1,11 +1,11 @@
-use reservoir_train::narma::{Narma, NarmaParams};
+use reservoir_core::{rmse, rsquare};
+use reservoir_datasets::narma::{Narma, NarmaParams};
 use reservoir_train::ESNBuilder;
-use reservoir_train::{rmse, rsquare};
 
 fn main() {
     let params = NarmaParams {
         n: 10,
-        steps: 5000, 
+        steps: 5000,
         seed: Some(42),
         ..Default::default()
     };
@@ -21,12 +21,12 @@ fn main() {
     let train_len = 3000;
     let inputs_train = &inputs[0..train_len];
     let targets_train = &targets[0..train_len];
-    
+
     let inputs_test = &inputs[train_len..];
     let targets_test = &targets[train_len..];
 
-    let mut esn = ESNBuilder::new(1, 1) 
-        .units(500)            
+    let mut esn = ESNBuilder::new(1, 1)
+        .units(500)
         .spectral_radius(0.95)
         .leaking_rate(0.3)
         .input_scaling(0.2)
@@ -44,6 +44,6 @@ fn main() {
 
     println!("--------------------------------------------------");
     println!("RMSE : {:.6}", rmse(&y_true, &preds));
-    println!("R^2  : {:.6}", rsquare(&y_true, &preds)); 
+    println!("R^2  : {:.6}", rsquare(&y_true, &preds));
     println!("--------------------------------------------------");
 }

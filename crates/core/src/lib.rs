@@ -2,13 +2,15 @@
 
 extern crate alloc;
 
-pub mod types;
-pub mod reservoir;
-pub mod readout;
-pub mod trainer;
+pub mod metrics;
 pub mod prelude;
+pub mod readout;
+pub mod reservoir;
+pub mod trainer;
+pub mod types;
 
-pub use types::*;
-pub use reservoir::*;
+pub use metrics::*;
 pub use readout::*;
+pub use reservoir::*;
 pub use trainer::*;
+pub use types::*;

@@ -1,0 +1,12 @@
+[package]
+name = "reservoir-datasets"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["std"]
+std = ["rand/std", "rand/std_rng"]
+
+[dependencies]
+rand = { version = "0.8", default-features = false, features = ["alloc", "small_rng"] }
+num-traits = { version = "0.2.19", default-features = false, features = ["libm"] }

@@ -1,6 +1,7 @@
 use fixed::types::I20F12;
-use reservoir_train::mackey_glass::{MackeyGlass, MackeyGlassParams};
-use reservoir_train::{rmse, rsquare, ESNBuilder};
+use reservoir_core::{rmse, rsquare};
+use reservoir_datasets::mackey_glass::{MackeyGlass, MackeyGlassParams};
+use reservoir_train::ESNBuilder;
 
 type MyFixed = I20F12;
 

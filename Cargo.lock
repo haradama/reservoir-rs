@@ -263,6 +263,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "reservoir-datasets"
+version = "0.1.0"
+dependencies = [
+ "num-traits",
+ "rand",
+]
+
+[[package]]
 name = "reservoir-train"
 version = "0.1.0"
 dependencies = [
@@ -271,6 +279,7 @@ dependencies = [
  "num-traits",
  "rand",
  "reservoir-core",
+ "reservoir-datasets",
 ]
 
 [[package]]
