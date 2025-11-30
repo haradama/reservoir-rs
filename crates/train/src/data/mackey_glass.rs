@@ -1,6 +1,10 @@
+extern crate alloc;
 use crate::RngType;
+use alloc::collections::VecDeque;
+use alloc::vec::Vec;
+#[cfg(not(feature = "std"))]
+use num_traits::Float;
 use rand::{Rng, SeedableRng};
-use std::collections::VecDeque;
 
 pub struct MackeyGlassParams {
     pub a: f64,
@@ -30,7 +34,16 @@ impl MackeyGlass {
         } else {
             let mut rng = match params.seed {
                 Some(s) => RngType::seed_from_u64(s),
-                None => RngType::from_entropy(),
+                None => {
+                    #[cfg(feature = "std")]
+                    {
+                        RngType::from_entropy()
+                    }
+                    #[cfg(not(feature = "std"))]
+                    {
+                        RngType::seed_from_u64(42)
+                    }
+                }
             };
             for _ in 0..history_len {
                 history.push_back(params.x0 + rng.gen::<f64>() * 0.1);

@@ -1,4 +1,6 @@
 use crate::{readout::LassoReadout, reservoir::DenseReservoir};
+use core::default::Default;
+use core::result::Result;
 use nalgebra::{DMatrix, DVector};
 use reservoir_core::{
     reservoir::Reservoir,

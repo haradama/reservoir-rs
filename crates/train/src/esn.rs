@@ -1,5 +1,3 @@
-use std::{marker::PhantomData, usize};
-
 use crate::{
     float::RealScalar,
     input::IntoInput,
@@ -7,6 +5,9 @@ use crate::{
     reservoir::DenseReservoir,
     trainer::{LassoTrainer, RidgeTrainer},
 };
+extern crate alloc;
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 use nalgebra::DVector;
 use reservoir_core::{types::Output, Input, Readout, Reservoir, Scalar, Trainer};
 

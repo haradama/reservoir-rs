@@ -5,15 +5,17 @@ edition = "2021"
 
 [features]
 default = ["std"]
-std = ["dep:nalgebra", "num-traits/std"]
-libm = ["num-traits/libm", "nalgebra?/libm"]
+std = ["nalgebra/std", "num-traits/std"]
+libm = ["num-traits/libm", "nalgebra/libm"]
 fixed_point = ["dep:fixed", "dep:cordic"]
 
 [dependencies]
 fixed = { version = "1.29.0", features = ["num-traits"], optional = true }
 cordic = { version = "0.1.5", optional = true }
 
-nalgebra = { version = "0.33.2", optional = true, default-features = false, features = [
+nalgebra = { version = "0.33.2", default-features = false, optional = true, features = [
     "alloc",
+    "macros",
 ] }
+
 num-traits = { version = "0.2.19", default-features = false }

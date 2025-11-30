@@ -1,5 +1,5 @@
 use num_traits::Float;
-use std::iter::Sum;
+use core::iter::Sum;
 
 pub fn mse<T>(y_true: &[T], y_pred: &[T]) -> T
 where

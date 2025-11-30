@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use nalgebra::DVector;
 use reservoir_core::types::Scalar;
 

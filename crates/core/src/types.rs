@@ -1,6 +1,4 @@
 extern crate alloc;
-#[cfg(not(feature = "std"))]
-use alloc::vec::Vec;
 use core::{
     any::Any,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
@@ -99,22 +97,20 @@ where
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm", feature = "fixed_point"))]
 pub type State<S> = DVector<S>;
-#[cfg(not(feature = "std"))]
-pub type State<S> = Vec<S>;
-
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm", feature = "fixed_point"))]
 pub type Input<S> = DVector<S>;
-#[cfg(not(feature = "std"))]
-pub type Input<S> = Vec<S>;
-
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm", feature = "fixed_point"))]
 pub type Output<S> = DVector<S>;
-#[cfg(not(feature = "std"))]
-pub type Output<S> = Vec<S>;
-
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "libm", feature = "fixed_point"))]
 pub type Matrix<S> = DMatrix<S>;
-#[cfg(not(feature = "std"))]
-pub type Matrix<S> = ();
+
+#[cfg(not(any(feature = "std", feature = "libm", feature = "fixed_point")))]
+pub type State<S> = PhantomData<S>;
+#[cfg(not(any(feature = "std", feature = "libm", feature = "fixed_point")))]
+pub type Input<S> = PhantomData<S>;
+#[cfg(not(any(feature = "std", feature = "libm", feature = "fixed_point")))]
+pub type Output<S> = PhantomData<S>;
+#[cfg(not(any(feature = "std", feature = "libm", feature = "fixed_point")))]
+pub type Matrix<S> = PhantomData<S>;

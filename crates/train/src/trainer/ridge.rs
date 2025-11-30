@@ -1,3 +1,5 @@
+use core::result::Result;
+use core::default::Default;
 use crate::{float::RealScalar, readout::RidgeReadout, reservoir::DenseReservoir};
 use nalgebra::DMatrix;
 use reservoir_core::{
