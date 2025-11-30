@@ -1,22 +1,22 @@
-use crate::float::RealScalar;
 use nalgebra::DMatrix;
 use rand::{distributions::Uniform, rngs::StdRng, Rng, SeedableRng};
 use reservoir_core::{readout::Readout, types::*};
 
 #[derive(Debug, Clone)]
-pub struct LassoReadout<S: RealScalar> {
+pub struct LassoReadout<S: Scalar> {
     w_out: DMatrix<S>,
     output_dim: usize,
 }
 
-impl<S: RealScalar> LassoReadout<S> {
+impl<S: Scalar> LassoReadout<S> {
     pub fn new(input_dim: usize, output_dim: usize, seed: u64) -> Self {
         let mut rng = StdRng::seed_from_u64(seed);
-        let lo = S::from_f64_val(-0.5);
-        let hi = S::from_f64_val(0.5);
-        let uni = Uniform::new(lo, hi);
 
-        let w_out = DMatrix::from_fn(output_dim, input_dim, |_, _| rng.sample(&uni));
+        let uni = Uniform::new(-0.5f64, 0.5f64);
+        let w_out = DMatrix::from_fn(output_dim, input_dim, |_, _| {
+            S::from_f64_val(rng.sample(&uni))
+        });
+
         Self { w_out, output_dim }
     }
 
@@ -26,7 +26,7 @@ impl<S: RealScalar> LassoReadout<S> {
     }
 }
 
-impl<S: RealScalar> Readout<S> for LassoReadout<S> {
+impl<S: Scalar> Readout<S> for LassoReadout<S> {
     fn predict(&self, state: &State<S>) -> Output<S> {
         &self.w_out * state
     }

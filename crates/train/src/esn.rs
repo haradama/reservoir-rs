@@ -16,9 +16,11 @@ pub struct EchoStateNetwork<S: Scalar, R, O> {
     _marker: PhantomData<S>,
 }
 
-impl<S> EchoStateNetwork<S, DenseReservoir<S>, RidgeReadout<S>>
+impl<S, R, O> EchoStateNetwork<S, R, O>
 where
-    S: RealScalar,
+    S: Scalar,
+    R: Reservoir<S>,
+    O: Readout<S>,
 {
     pub fn predict<I>(&mut self, input: I) -> Output<S>
     where
@@ -29,9 +31,17 @@ where
         self.readout.predict(state)
     }
 
+    pub fn state_dim(&self) -> usize {
+        self.reservoir.dim()
+    }
+}
+
+impl<S> EchoStateNetwork<S, DenseReservoir<S>, RidgeReadout<S>>
+where
+    S: RealScalar,
+{
     pub fn fit(&mut self, inputs: &[Vec<S>], targets: &[Vec<S>], ridge: S, washout: usize) {
         let inputs_dv: Vec<Input<S>> = inputs.iter().cloned().map(DVector::from_vec).collect();
-
         let targets_dv: Vec<Output<S>> = targets.iter().cloned().map(DVector::from_vec).collect();
 
         let mut trainer = RidgeTrainer { ridge };
@@ -44,10 +54,6 @@ where
                 washout,
             )
             .expect("training failed");
-    }
-
-    pub fn state_dim(&self) -> usize {
-        self.reservoir.dim()
     }
 }
 
@@ -80,7 +86,7 @@ where
     }
 }
 
-pub struct ESNBuilder<S: RealScalar> {
+pub struct ESNBuilder<S: Scalar> {
     input_dim: usize,
     output_dim: usize,
     units: usize,
@@ -91,7 +97,7 @@ pub struct ESNBuilder<S: RealScalar> {
     _marker: core::marker::PhantomData<S>,
 }
 
-impl<S: RealScalar> ESNBuilder<S> {
+impl<S: Scalar> ESNBuilder<S> {
     pub fn new(input_dim: usize, output_dim: usize) -> Self {
         Self {
             input_dim,

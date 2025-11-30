@@ -1,13 +1,10 @@
 extern crate alloc;
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
-use core::ops::{Add, Div, Mul, Sub};
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
-use fixed::{
-    types::extra::LeEqU32,
-    FixedI32,
-};
 use cordic::CordicNumber;
+use fixed::{types::extra::LeEqU32, FixedI32};
 
 #[cfg(feature = "std")]
 use nalgebra::{DMatrix, DVector};
@@ -25,6 +22,10 @@ pub trait Scalar:
     + Sub<Output = Self>
     + Mul<Output = Self>
     + Div<Output = Self>
+    + AddAssign
+    + SubAssign
+    + MulAssign
+    + DivAssign
     + PartialOrd
 {
     fn activation(self) -> Self;
@@ -62,7 +63,7 @@ where
 {
     fn activation(self) -> Self {
         let one = <Self as One>::one();
-        
+
         let threshold = Self::from_num(5);
 
         if self > threshold {
