@@ -1,0 +1,62 @@
+[package]
+name = "qemu-test"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+avr-test = []
+arm-test = []
+
+[[bin]]
+name = "test_arm"
+path = "src/bin/test_arm.rs"
+required-features = ["arm-test"]
+test = false
+bench = false
+
+[[bin]]
+name = "test_avr"
+path = "src/bin/test_avr.rs"
+required-features = ["avr-test"]
+test = false
+bench = false
+
+# [dependencies]
+# reservoir-core = { path = "../core", default-features = false, features = [
+#     "libm",
+# ] }
+# reservoir-train = { path = "../train", default-features = false, features = [
+#     "libm",
+# ] }
+# reservoir-datasets = { path = "../datasets", default-features = false }
+# embedded-alloc = "0.5"
+# panic-halt = "0.2"
+
+[target.'cfg(target_arch = "arm")'.dependencies]
+cortex-m = "0.7"
+cortex-m-rt = "0.7"
+cortex-m-semihosting = "0.5"
+panic-semihosting = "0.6"
+
+[target.'cfg(target_arch = "avr")'.dependencies]
+panic-halt = "0.2"
+embedded-hal = "1.0"
+ufmt = "0.2"
+nb = "1.1"
+
+[target.'cfg(target_arch = "avr")'.dependencies.arduino-hal]
+git = "https://github.com/rahix/avr-hal"
+rev = "3e362624547462928a219c40f9ea8e3a64f21e5f"
+features = ["arduino-uno"]
+
+[profile.dev]
+panic = "abort"
+lto = true
+opt-level = "s"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+debug = true
+lto = true
+opt-level = "s"

@@ -1,0 +1,58 @@
+[target.thumbv7m-none-eabi]
+rustflags = ["-C", "link-arg=-Tlink.x"]
+runner = [
+    "./tools/qemu-runner.py",
+    "qemu-system-arm",
+    "-cpu",
+    "cortex-m3",
+    "-machine",
+    "lm3s6965evb",
+    "-nographic",
+    "-semihosting-config",
+    "enable=on,target=native",
+    "-kernel",
+]
+
+[target.thumbv7em-none-eabihf]
+rustflags = ["-C", "link-arg=-Tlink.x"]
+runner = [
+    "./tools/qemu-runner.py",
+    "qemu-system-arm",
+    "-cpu",
+    "cortex-m4",
+    "-machine",
+    "mps2-an386",
+    "-nographic",
+    "-semihosting-config",
+    "enable=on,target=native",
+    "-kernel",
+]
+
+[target.thumbv6m-none-eabi]
+rustflags = ["-C", "link-arg=-Tlink.x"]
+runner = [
+    "./tools/qemu-runner.py",
+    "qemu-system-arm",
+    "-cpu",
+    "cortex-m0",
+    "-machine",
+    "microbit",
+    "-nographic",
+    "-semihosting-config",
+    "enable=on,target=native",
+    "-kernel",
+]
+
+[target.'cfg(target_arch = "avr")']
+rustflags = ["-C", "target-cpu=atmega328p"]
+runner = [
+    "./tools/qemu-runner.py",
+    "qemu-system-avr",
+    "-machine",
+    "arduino-uno",
+    "-nographic",
+    "-bios",
+]
+
+[unstable]
+build-std = ["core"]

@@ -1,6 +1,8 @@
 [workspace]
-members = [
-    "crates/core", "crates/infer",
-    "crates/train",
-]
+members = ["crates/core", "crates/infer", "crates/qemu_test", "crates/train"]
 resolver = "2"
+
+[profile.avr]
+inherits = "dev"
+panic = "abort"
+opt-level = "s"

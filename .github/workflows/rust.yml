@@ -11,12 +11,41 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        # AVR: qemu-system-avr, gcc-avr, avr-libc
+        # ARM: qemu-system-arm, gcc-arm-none-eabi
+        sudo apt-get install -y qemu-system-avr gcc-avr avr-libc \
+                                qemu-system-arm gcc-arm-none-eabi
+
+    - name: Build & Test (Host)
+      run: |
+        cargo build --verbose
+        cargo test --verbose
+
+    - name: Smoke Test (Embedded: AVR & ARM)
+      working-directory: crates/qemu_test
+      run: |
+        rustup target add thumbv7m-none-eabi thumbv7em-none-eabihf thumbv6m-none-eabi
+
+        # --- AVR (ATmega328P) ---
+        echo "Running AVR Smoke Test..."
+        cargo run --profile avr --bin test_avr --target avr-atmega328p.json
+
+        # --- ARM (Cortex-M3 / Stellaris) ---
+        echo "Running ARM Cortex-M3 Smoke Test..."
+        cargo run --bin test_arm --target thumbv7m-none-eabi
+
+        # --- ARM (Cortex-M4F / MPS2) ---
+        echo "Running ARM Cortex-M4F Smoke Test..."
+        cargo run --bin test_arm --target thumbv7em-none-eabihf
+        
+        # --- ARM (Cortex-M0 / micro:bit) ---
+        echo "Running ARM Cortex-M0 Smoke Test..."
+        cargo run --bin test_arm --target thumbv6m-none-eabi
