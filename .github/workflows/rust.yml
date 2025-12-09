@@ -36,16 +36,16 @@ jobs:
 
         # --- AVR (ATmega328P) ---
         echo "Running AVR Smoke Test..."
-        cargo run --profile avr --bin test_avr --target avr-atmega328p.json
+        cargo run --profile avr --bin test_avr --features="avr-test" --target avr-atmega328p.json
 
         # --- ARM (Cortex-M3 / Stellaris) ---
         echo "Running ARM Cortex-M3 Smoke Test..."
-        cargo run --bin test_arm --target thumbv7m-none-eabi
+        cargo run --bin test_arm --target thumbv7m-none-eabi --features="arm-test"
 
         # --- ARM (Cortex-M4F / MPS2) ---
         echo "Running ARM Cortex-M4F Smoke Test..."
-        cargo run --bin test_arm --target thumbv7em-none-eabihf
+        cargo run --bin test_arm --target thumbv7em-none-eabihf --features="arm-test"
         
         # --- ARM (Cortex-M0 / micro:bit) ---
         echo "Running ARM Cortex-M0 Smoke Test..."
-        cargo run --bin test_arm --target thumbv6m-none-eabi
+        cargo run --bin test_arm --target thumbv6m-none-eabi --features="arm-test"
