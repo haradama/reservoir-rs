@@ -1,5 +1,5 @@
-pub mod ridge;
 pub mod lasso;
+pub mod ridge;
 
-pub use ridge::RidgeTrainer;
 pub use lasso::LassoTrainer;
+pub use ridge::RidgeTrainer;

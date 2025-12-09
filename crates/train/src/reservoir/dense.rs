@@ -33,14 +33,14 @@ impl<S: Scalar> DenseReservoir<S> {
         let mut w = rnd(units, units);
         let w_f64 = w.map(|x| x.to_f64_val());
         let eigenvalues = w_f64.complex_eigenvalues();
-        
+
         let current_rho = eigenvalues
             .iter()
             .map(|c| c.norm())
             .fold(0.0f64, |a, b| a.max(b));
 
         let target_rho = spectral_radius.to_f64_val();
-        
+
         if current_rho > 0.0 {
             let scale = target_rho / current_rho;
             w *= S::from_f64_val(scale);

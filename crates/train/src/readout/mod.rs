@@ -1,5 +1,5 @@
-pub mod ridge;
 pub mod lasso;
+pub mod ridge;
 
-pub use ridge::RidgeReadout;
 pub use lasso::LassoReadout;
+pub use ridge::RidgeReadout;

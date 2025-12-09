@@ -54,7 +54,7 @@ impl HenonMap {
 
     pub fn generate(&mut self) -> Vec<f64> {
         let mut data = Vec::with_capacity(self.params.steps);
-        
+
         for _ in 0..100 {
             self.step();
         }

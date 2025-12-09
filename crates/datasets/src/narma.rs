@@ -3,23 +3,23 @@ use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 use rand::{Rng, SeedableRng};
 
-use crate::RngType; 
+use crate::RngType;
 
 #[derive(Clone, Debug)]
 pub struct NarmaParams {
-    pub n: usize,      
-    pub alpha: f64,    
-    pub beta: f64,     
-    pub gamma: f64,    
-    pub delta: f64,    
-    pub steps: usize,  
+    pub n: usize,
+    pub alpha: f64,
+    pub beta: f64,
+    pub gamma: f64,
+    pub delta: f64,
+    pub steps: usize,
     pub seed: Option<u64>,
 }
 
 impl Default for NarmaParams {
     fn default() -> Self {
         Self {
-            n: 10, 
+            n: 10,
             alpha: 0.3,
             beta: 0.05,
             gamma: 1.5,
@@ -40,7 +40,7 @@ pub struct Narma {
 impl Narma {
     pub fn new(params: NarmaParams) -> Self {
         let n = params.n;
-        
+
         let mut y_history = VecDeque::with_capacity(n);
         let mut u_history = VecDeque::with_capacity(n);
         for _ in 0..n {
@@ -74,10 +74,7 @@ impl Narma {
         };
 
         let p = &self.params;
-        let next_y = p.alpha * y_t
-            + p.beta * y_t * sum_y
-            + p.gamma * u_delayed * u_t
-            + p.delta;
+        let next_y = p.alpha * y_t + p.beta * y_t * sum_y + p.gamma * u_delayed * u_t + p.delta;
 
         self.u_history.pop_front();
         self.u_history.push_back(u_t);

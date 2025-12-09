@@ -1,5 +1,5 @@
-use num_traits::Float;
 use core::iter::Sum;
+use num_traits::Float;
 
 pub fn mse<T>(y_true: &[T], y_pred: &[T]) -> T
 where
@@ -37,6 +37,10 @@ where
 {
     let mean = y_true.iter().copied().sum::<T>() / T::from(y_true.len()).unwrap();
     let ss_tot: T = y_true.iter().map(|&v| (v - mean).powi(2)).sum();
-    let ss_res: T = y_true.iter().zip(y_pred).map(|(&t, &p)| (t - p).powi(2)).sum();
+    let ss_res: T = y_true
+        .iter()
+        .zip(y_pred)
+        .map(|(&t, &p)| (t - p).powi(2))
+        .sum();
     T::one() - ss_res / ss_tot
 }

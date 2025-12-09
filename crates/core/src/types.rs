@@ -4,12 +4,7 @@ use core::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-#[cfg(feature = "fixed_point")]
-use cordic::CordicNumber;
-#[cfg(feature = "fixed_point")]
-use fixed::{types::extra::LeEqU32, FixedI32};
-
-#[cfg(any(feature = "std", feature = "libm", feature = "fixed_point"))]
+#[cfg(any(feature = "std", feature = "libm"))]
 use nalgebra::{DMatrix, DVector};
 use num_traits::{One, Zero};
 
@@ -67,59 +62,20 @@ macro_rules! impl_scalar_float {
 #[cfg(any(feature = "std", feature = "libm"))]
 impl_scalar_float!(f32, f64);
 
-#[cfg(feature = "fixed_point")]
-impl<Frac> Scalar for FixedI32<Frac>
-where
-    Frac: LeEqU32 + 'static + Send + Sync,
-    FixedI32<Frac>: CordicNumber,
-    FixedI32<Frac>: One,
-{
-    fn activation(self) -> Self {
-        let one = <Self as One>::one();
-
-        let threshold = Self::from_num(5);
-
-        if self > threshold {
-            return one;
-        }
-        if self < -threshold {
-            return -one;
-        }
-
-        let two = one + one;
-        let two_x = self * two;
-        let e2x = cordic::exp(two_x);
-
-        (e2x - one) / (e2x + one)
-    }
-
-    fn from_f64_val(v: f64) -> Self {
-        Self::from_num(v)
-    }
-
-    fn to_f64_val(self) -> f64 {
-        self.to_num::<f64>()
-    }
-
-    fn abs_val(self) -> Self {
-        self.abs()
-    }
-}
-
-#[cfg(any(feature = "std", feature = "libm", feature = "fixed_point"))]
+#[cfg(any(feature = "std", feature = "libm"))]
 pub type State<S> = DVector<S>;
-#[cfg(any(feature = "std", feature = "libm", feature = "fixed_point"))]
+#[cfg(any(feature = "std", feature = "libm"))]
 pub type Input<S> = DVector<S>;
-#[cfg(any(feature = "std", feature = "libm", feature = "fixed_point"))]
+#[cfg(any(feature = "std", feature = "libm"))]
 pub type Output<S> = DVector<S>;
-#[cfg(any(feature = "std", feature = "libm", feature = "fixed_point"))]
+#[cfg(any(feature = "std", feature = "libm"))]
 pub type Matrix<S> = DMatrix<S>;
 
-#[cfg(not(any(feature = "std", feature = "libm", feature = "fixed_point")))]
+#[cfg(not(any(feature = "std", feature = "libm")))]
 pub type State<S> = PhantomData<S>;
-#[cfg(not(any(feature = "std", feature = "libm", feature = "fixed_point")))]
+#[cfg(not(any(feature = "std", feature = "libm")))]
 pub type Input<S> = PhantomData<S>;
-#[cfg(not(any(feature = "std", feature = "libm", feature = "fixed_point")))]
+#[cfg(not(any(feature = "std", feature = "libm")))]
 pub type Output<S> = PhantomData<S>;
-#[cfg(not(any(feature = "std", feature = "libm", feature = "fixed_point")))]
+#[cfg(not(any(feature = "std", feature = "libm")))]
 pub type Matrix<S> = PhantomData<S>;
