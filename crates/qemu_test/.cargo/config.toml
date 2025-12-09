@@ -43,6 +43,21 @@ runner = [
     "-kernel",
 ]
 
+[target.riscv32imac-unknown-none-elf]
+rustflags = ["-C", "link-arg=-Tmemory.x", "-C", "link-arg=-Tlink.x"]
+runner = [
+    "./tools/qemu-runner.py",
+    "qemu-system-riscv32",
+    "-machine",
+    "virt",
+    "-cpu",
+    "rv32",
+    "-nographic",
+    "-bios",
+    "none",
+    "-kernel",
+]
+
 [target.'cfg(target_arch = "avr")']
 rustflags = ["-C", "target-cpu=atmega328p"]
 runner = [

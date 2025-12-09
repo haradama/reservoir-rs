@@ -14,6 +14,13 @@ test = false
 bench = false
 
 [[bin]]
+name = "test_riscv"
+path = "src/bin/test_riscv.rs"
+required-features = ["qemu"]
+test = false
+bench = false
+
+[[bin]]
 name = "test_avr"
 path = "src/bin/test_avr.rs"
 required-features = ["qemu"]
@@ -47,6 +54,12 @@ nb = "1.1"
 git = "https://github.com/rahix/avr-hal"
 rev = "3e362624547462928a219c40f9ea8e3a64f21e5f"
 features = ["arduino-uno"]
+
+[target.'cfg(target_arch = "riscv32")'.dependencies]
+ufmt = "0.2"
+riscv = "0.11"
+riscv-rt = "0.12"
+panic-halt = "0.2"
 
 [profile.dev]
 panic = "abort"

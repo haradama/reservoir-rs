@@ -13,6 +13,8 @@ fn main() {
         "memory_mps2.x" // Cortex-M4F (QEMU: mps2-an386)
     } else if target.starts_with("thumbv6m-") {
         "memory_microbit.x" // Cortex-M0 (QEMU: microbit)
+    } else if target.starts_with("riscv32") {
+        "memory_virt.x"
     } else {
         return;
     };
