@@ -4,20 +4,19 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-avr-test = []
-arm-test = []
+qemu = []
 
 [[bin]]
 name = "test_arm"
 path = "src/bin/test_arm.rs"
-required-features = ["arm-test"]
+required-features = ["qemu"]
 test = false
 bench = false
 
 [[bin]]
 name = "test_avr"
 path = "src/bin/test_avr.rs"
-required-features = ["avr-test"]
+required-features = ["qemu"]
 test = false
 bench = false
 
