@@ -1,0 +1,23 @@
+repos:
+  - repo: local
+    hooks:
+      - id: rustfmt
+        name: Rustfmt
+        entry: cargo fmt --all -- --check
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-check
+        name: Cargo Check
+        entry: cargo check
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: deny-japanese-comments
+        name: Deny Japanese in Rust comments
+        entry: bash -c '! grep -n "[ぁ-んァ-ン一-龥]" "$@"' --
+        language: system
+        types: [rust]
+        pass_filenames: true
