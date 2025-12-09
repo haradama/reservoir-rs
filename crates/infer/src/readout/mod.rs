@@ -1,5 +1,13 @@
-pub mod lasso;
-pub mod ridge;
+// crates/infer/src/readout/mod.rs
 
+#[cfg(feature = "alloc")]
+pub mod lasso;
+#[cfg(feature = "alloc")]
+pub mod ridge;
+pub mod static_readout;
+
+#[cfg(feature = "alloc")]
 pub use lasso::LassoReadout;
+#[cfg(feature = "alloc")]
 pub use ridge::RidgeReadout;
+pub use static_readout::StaticReadout;

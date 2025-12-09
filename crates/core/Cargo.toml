@@ -5,13 +5,11 @@ edition = "2021"
 
 [features]
 default = ["std"]
-std = ["nalgebra/std", "num-traits/std"]
+std = ["alloc", "nalgebra/std", "num-traits/std"]
+alloc = ["nalgebra/alloc"]
 libm = ["num-traits/libm", "nalgebra/libm"]
 
 [dependencies]
-nalgebra = { version = "0.33.2", default-features = false, optional = true, features = [
-    "alloc",
-    "macros",
-] }
-
+heapless = "0.9.2"
+nalgebra = { version = "0.33.2", default-features = false, optional = true }
 num-traits = { version = "0.2.19", default-features = false }

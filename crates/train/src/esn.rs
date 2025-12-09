@@ -2,6 +2,7 @@ use crate::{
     float::RealScalar,
     trainer::{LassoTrainer, RidgeTrainer},
 };
+use alloc::vec::Vec;
 use core::marker::PhantomData;
 use nalgebra::{DMatrix, DVector, Normed};
 use rand::{distributions::Uniform, Rng, SeedableRng};

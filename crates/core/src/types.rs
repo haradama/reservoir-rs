@@ -1,10 +1,10 @@
+#[cfg(feature = "alloc")]
 extern crate alloc;
-use core::{
-    any::Any,
-    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
-};
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-#[cfg(any(feature = "std", feature = "libm"))]
+#[cfg(not(feature = "alloc"))]
+use core::marker::PhantomData;
+#[cfg(feature = "alloc")]
 use nalgebra::{DMatrix, DVector};
 use num_traits::{One, Zero};
 
@@ -14,7 +14,6 @@ pub trait Scalar:
     + Sync
     + core::fmt::Debug
     + 'static
-    + Any
     + Zero
     + One
     + Add<Output = Self>
@@ -34,7 +33,6 @@ pub trait Scalar:
     fn abs_val(self) -> Self;
 }
 
-#[cfg(any(feature = "std", feature = "libm"))]
 macro_rules! impl_scalar_float {
     ($($t:ty),*) => {
         $(
@@ -59,23 +57,22 @@ macro_rules! impl_scalar_float {
     };
 }
 
-#[cfg(any(feature = "std", feature = "libm"))]
 impl_scalar_float!(f32, f64);
 
-#[cfg(any(feature = "std", feature = "libm"))]
+#[cfg(feature = "alloc")]
 pub type State<S> = DVector<S>;
-#[cfg(any(feature = "std", feature = "libm"))]
+#[cfg(feature = "alloc")]
 pub type Input<S> = DVector<S>;
-#[cfg(any(feature = "std", feature = "libm"))]
+#[cfg(feature = "alloc")]
 pub type Output<S> = DVector<S>;
-#[cfg(any(feature = "std", feature = "libm"))]
+#[cfg(feature = "alloc")]
 pub type Matrix<S> = DMatrix<S>;
 
-#[cfg(not(any(feature = "std", feature = "libm")))]
+#[cfg(not(feature = "alloc"))]
 pub type State<S> = PhantomData<S>;
-#[cfg(not(any(feature = "std", feature = "libm")))]
+#[cfg(not(feature = "alloc"))]
 pub type Input<S> = PhantomData<S>;
-#[cfg(not(any(feature = "std", feature = "libm")))]
+#[cfg(not(feature = "alloc"))]
 pub type Output<S> = PhantomData<S>;
-#[cfg(not(any(feature = "std", feature = "libm")))]
+#[cfg(not(feature = "alloc"))]
 pub type Matrix<S> = PhantomData<S>;
