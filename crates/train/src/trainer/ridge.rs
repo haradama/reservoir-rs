@@ -1,4 +1,4 @@
-use crate::{float::RealScalar, readout::RidgeReadout, reservoir::DenseReservoir};
+use crate::float::RealScalar;
 use core::default::Default;
 use core::result::Result;
 use nalgebra::DMatrix;
@@ -7,6 +7,7 @@ use reservoir_core::{
     trainer::Trainer,
     types::{Input, Output},
 };
+use reservoir_infer::{DenseReservoir, RidgeReadout};
 
 pub struct RidgeTrainer<S: RealScalar> {
     pub ridge: S,

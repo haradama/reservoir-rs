@@ -1,47 +1,27 @@
 use crate::{
     float::RealScalar,
-    input::IntoInput,
-    readout::{LassoReadout, RidgeReadout},
-    reservoir::DenseReservoir,
     trainer::{LassoTrainer, RidgeTrainer},
 };
-extern crate alloc;
-use alloc::vec::Vec;
 use core::marker::PhantomData;
-use nalgebra::DVector;
-use reservoir_core::{types::Output, Input, Readout, Reservoir, Scalar, Trainer};
+use nalgebra::{DMatrix, DVector, Normed};
+use rand::{distributions::Uniform, Rng, SeedableRng};
+use reservoir_core::{types::*, Input, Output, Reservoir, Trainer};
+use reservoir_infer::{DenseReservoir, EchoStateNetwork, LassoReadout, RidgeReadout};
 
-pub struct EchoStateNetwork<S: Scalar, R, O> {
-    pub reservoir: R,
-    pub readout: O,
-    _marker: PhantomData<S>,
-}
+use crate::RngType;
 
-impl<S, R, O> EchoStateNetwork<S, R, O>
-where
-    S: Scalar,
-    R: Reservoir<S>,
-    O: Readout<S>,
-{
-    pub fn predict<I>(&mut self, input: I) -> Output<S>
-    where
-        I: IntoInput<S>,
-    {
-        let dv = input.into_dvector();
-        let state = self.reservoir.step(&dv);
-        self.readout.predict(state)
-    }
-
-    pub fn state_dim(&self) -> usize {
-        self.reservoir.dim()
-    }
-}
-
-impl<S> EchoStateNetwork<S, DenseReservoir<S>, RidgeReadout<S>>
+pub trait ESNFitRidge<S>
 where
     S: RealScalar,
 {
-    pub fn fit(&mut self, inputs: &[Vec<S>], targets: &[Vec<S>], ridge: S, washout: usize) {
+    fn fit(&mut self, inputs: &[Vec<S>], targets: &[Vec<S>], ridge: S, washout: usize);
+}
+
+impl<S> ESNFitRidge<S> for EchoStateNetwork<S, DenseReservoir<S>, RidgeReadout<S>>
+where
+    S: RealScalar,
+{
+    fn fit(&mut self, inputs: &[Vec<S>], targets: &[Vec<S>], ridge: S, washout: usize) {
         let inputs_dv: Vec<Input<S>> = inputs.iter().cloned().map(DVector::from_vec).collect();
         let targets_dv: Vec<Output<S>> = targets.iter().cloned().map(DVector::from_vec).collect();
 
@@ -58,11 +38,26 @@ where
     }
 }
 
-impl<S> EchoStateNetwork<S, DenseReservoir<S>, LassoReadout<S>>
+pub trait ESNFitLasso<S>
 where
     S: Scalar,
 {
-    pub fn fit_lasso(
+    fn fit_lasso(
+        &mut self,
+        inputs: &[Vec<S>],
+        targets: &[Vec<S>],
+        alpha: S,
+        max_iter: usize,
+        tol: S,
+        washout: usize,
+    );
+}
+
+impl<S> ESNFitLasso<S> for EchoStateNetwork<S, DenseReservoir<S>, LassoReadout<S>>
+where
+    S: Scalar,
+{
+    fn fit_lasso(
         &mut self,
         inputs: &[Vec<S>],
         targets: &[Vec<S>],
@@ -95,7 +90,7 @@ pub struct ESNBuilder<S: Scalar> {
     input_scaling: S,
     leaking_rate: S,
     seed: u64,
-    _marker: core::marker::PhantomData<S>,
+    _marker: PhantomData<S>,
 }
 
 impl<S: Scalar> ESNBuilder<S> {
@@ -133,39 +128,67 @@ impl<S: Scalar> ESNBuilder<S> {
         self
     }
 
-    pub fn build(self) -> EchoStateNetwork<S, DenseReservoir<S>, RidgeReadout<S>> {
-        let reservoir = DenseReservoir::new(
-            self.input_dim,
-            self.units,
-            self.spectral_radius,
-            self.input_scaling,
-            self.leaking_rate,
-            self.seed,
-        );
-        let readout = RidgeReadout::new(reservoir.dim(), self.output_dim, self.seed);
+    fn generate_reservoir_matrices(&self) -> (DMatrix<S>, DMatrix<S>) {
+        let mut rng = RngType::seed_from_u64(self.seed);
+        let uni = Uniform::new(-0.5f64, 0.5f64);
+        let mut rnd =
+            |r: usize, c: usize| DMatrix::from_fn(r, c, |_, _| S::from_f64_val(rng.sample(&uni)));
 
-        EchoStateNetwork {
-            reservoir,
-            readout,
-            _marker: PhantomData,
+        let mut w = rnd(self.units, self.units);
+
+        let w_f64 = w.map(|x| x.to_f64_val());
+        let eigenvalues = w_f64.complex_eigenvalues();
+
+        let current_rho = eigenvalues
+            .iter()
+            .map(|c| c.norm())
+            .fold(0.0f64, |a, b| a.max(b));
+
+        let target_rho = self.spectral_radius.to_f64_val();
+
+        if current_rho > 0.0 {
+            let scale = target_rho / current_rho;
+            w *= S::from_f64_val(scale);
         }
+
+        let w_in = rnd(self.units, self.input_dim) * self.input_scaling;
+
+        (w_in, w)
+    }
+
+    fn generate_readout_matrix(&self, input_dim: usize, output_dim: usize) -> DMatrix<S> {
+        let mut rng = RngType::seed_from_u64(self.seed);
+        let uni = Uniform::new(-0.5f64, 0.5f64);
+        DMatrix::from_fn(output_dim, input_dim, |_, _| {
+            S::from_f64_val(rng.sample(&uni))
+        })
+    }
+
+    pub fn build(self) -> EchoStateNetwork<S, DenseReservoir<S>, RidgeReadout<S>> {
+        let (w_in, w) = self.generate_reservoir_matrices();
+
+        let reservoir =
+            DenseReservoir::create(w_in, w, self.leaking_rate, self.input_dim, self.units);
+
+        let reservoir_output_dim = reservoir.dim();
+        let w_out = self.generate_readout_matrix(reservoir_output_dim, self.output_dim);
+
+        let readout = RidgeReadout::create(w_out);
+
+        EchoStateNetwork::new(reservoir, readout)
     }
 
     pub fn build_lasso(self) -> EchoStateNetwork<S, DenseReservoir<S>, LassoReadout<S>> {
-        let reservoir = DenseReservoir::new(
-            self.input_dim,
-            self.units,
-            self.spectral_radius,
-            self.input_scaling,
-            self.leaking_rate,
-            self.seed,
-        );
-        let readout = LassoReadout::new(reservoir.dim(), self.output_dim, self.seed);
+        let (w_in, w) = self.generate_reservoir_matrices();
 
-        EchoStateNetwork {
-            reservoir,
-            readout,
-            _marker: PhantomData,
-        }
+        let reservoir =
+            DenseReservoir::create(w_in, w, self.leaking_rate, self.input_dim, self.units);
+
+        let reservoir_output_dim = reservoir.dim();
+        let w_out = self.generate_readout_matrix(reservoir_output_dim, self.output_dim);
+
+        let readout = LassoReadout::create(w_out);
+
+        EchoStateNetwork::new(reservoir, readout)
     }
 }

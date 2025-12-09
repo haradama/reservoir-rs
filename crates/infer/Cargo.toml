@@ -1,0 +1,13 @@
+[package]
+name = "reservoir-infer"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["std"]
+std = ["reservoir-core/std", "nalgebra/std"]
+libm = ["reservoir-core/libm", "nalgebra/libm"]
+
+[dependencies]
+reservoir-core = { path = "../core", default-features = false }
+nalgebra = { version = "0.33.2", default-features = false, features = ["alloc"] }

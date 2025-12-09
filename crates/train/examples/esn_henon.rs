@@ -1,6 +1,6 @@
 use reservoir_core::{rmse, rsquare};
 use reservoir_datasets::henon::{HenonMap, HenonParams};
-use reservoir_train::ESNBuilder;
+use reservoir_train::{ESNBuilder, ESNFitRidge};
 
 fn main() {
     let params = HenonParams {

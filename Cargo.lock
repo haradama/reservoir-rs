@@ -224,6 +224,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "reservoir-infer"
+version = "0.1.0"
+dependencies = [
+ "nalgebra",
+ "reservoir-core",
+]
+
+[[package]]
 name = "reservoir-train"
 version = "0.1.0"
 dependencies = [
@@ -232,6 +240,7 @@ dependencies = [
  "rand",
  "reservoir-core",
  "reservoir-datasets",
+ "reservoir-infer",
 ]
 
 [[package]]

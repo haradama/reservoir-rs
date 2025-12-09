@@ -1,53 +1,25 @@
-use nalgebra::{DMatrix, DVector, Normed};
-use rand::{distributions::Uniform, Rng, SeedableRng};
+use nalgebra::{DMatrix, DVector};
 use reservoir_core::{reservoir::Reservoir, types::*};
-
-use crate::RngType;
 
 #[derive(Debug, Clone)]
 pub struct DenseReservoir<S: Scalar> {
-    w_in: DMatrix<S>,
-    w: DMatrix<S>,
-    leaking_rate: S,
-    input_dim: usize,
+    pub w_in: DMatrix<S>,
+    pub w: DMatrix<S>,
+    pub leaking_rate: S,
+    pub input_dim: usize,
 
-    res_state: DVector<S>,
-    ext_state: DVector<S>,
+    pub res_state: DVector<S>,
+    pub ext_state: DVector<S>,
 }
 
 impl<S: Scalar> DenseReservoir<S> {
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
+    pub fn create(
+        w_in: DMatrix<S>,
+        w: DMatrix<S>,
+        leaking_rate: S,
         input_dim: usize,
         units: usize,
-        spectral_radius: S,
-        input_scaling: S,
-        leaking_rate: S,
-        seed: u64,
     ) -> Self {
-        let mut rng = RngType::seed_from_u64(seed);
-        let uni = Uniform::new(-0.5f64, 0.5f64);
-        let mut rnd =
-            |r: usize, c: usize| DMatrix::from_fn(r, c, |_, _| S::from_f64_val(rng.sample(&uni)));
-
-        let mut w = rnd(units, units);
-        let w_f64 = w.map(|x| x.to_f64_val());
-        let eigenvalues = w_f64.complex_eigenvalues();
-
-        let current_rho = eigenvalues
-            .iter()
-            .map(|c| c.norm())
-            .fold(0.0f64, |a, b| a.max(b));
-
-        let target_rho = spectral_radius.to_f64_val();
-
-        if current_rho > 0.0 {
-            let scale = target_rho / current_rho;
-            w *= S::from_f64_val(scale);
-        }
-
-        let w_in = rnd(units, input_dim) * input_scaling;
-
         Self {
             w_in,
             w,

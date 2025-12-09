@@ -5,11 +5,23 @@ edition = "2021"
 
 [features]
 default = ["std"]
-std = ["reservoir-core/std", "nalgebra/std", "rand/std", "rand/std_rng"]
-libm = ["reservoir-core/libm", "nalgebra/libm", "num-traits/libm"]
+std = [
+    "reservoir-core/std",
+    "reservoir-infer/std",
+    "nalgebra/std",
+    "rand/std",
+    "rand/std_rng",
+]
+libm = [
+    "reservoir-core/libm",
+    "reservoir-infer/libm",
+    "nalgebra/libm",
+    "num-traits/libm",
+]
 
 [dependencies]
 reservoir-core = { path = "../core", default-features = false }
+reservoir-infer = { path = "../infer", default-features = false }
 nalgebra = { version = "0.33.2", default-features = false, features = [
     "alloc",
 ] }

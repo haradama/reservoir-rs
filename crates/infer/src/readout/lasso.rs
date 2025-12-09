@@ -1,24 +1,15 @@
 use nalgebra::DMatrix;
-use rand::{distributions::Uniform, Rng, SeedableRng};
 use reservoir_core::{readout::Readout, types::*};
-
-use crate::RngType;
 
 #[derive(Debug, Clone)]
 pub struct LassoReadout<S: Scalar> {
-    w_out: DMatrix<S>,
-    output_dim: usize,
+    pub w_out: DMatrix<S>,
+    pub output_dim: usize,
 }
 
 impl<S: Scalar> LassoReadout<S> {
-    pub fn new(input_dim: usize, output_dim: usize, seed: u64) -> Self {
-        let mut rng = RngType::seed_from_u64(seed);
-
-        let uni = Uniform::new(-0.5f64, 0.5f64);
-        let w_out = DMatrix::from_fn(output_dim, input_dim, |_, _| {
-            S::from_f64_val(rng.sample(&uni))
-        });
-
+    pub fn create(w_out: DMatrix<S>) -> Self {
+        let output_dim = w_out.nrows();
         Self { w_out, output_dim }
     }
 

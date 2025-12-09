@@ -1,6 +1,6 @@
 use reservoir_core::{rmse, rsquare};
 use reservoir_datasets::mackey_glass::{MackeyGlass, MackeyGlassParams};
-use reservoir_train::ESNBuilder;
+use reservoir_train::{ESNBuilder, ESNFitRidge};
 
 fn main() {
     let mut mg = MackeyGlass::new(MackeyGlassParams {

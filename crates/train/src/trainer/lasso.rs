@@ -1,4 +1,3 @@
-use crate::{readout::LassoReadout, reservoir::DenseReservoir};
 use core::default::Default;
 use core::result::Result;
 use nalgebra::{DMatrix, DVector};
@@ -8,6 +7,7 @@ use reservoir_core::{
     types::{Input, Output},
     Scalar,
 };
+use reservoir_infer::{DenseReservoir, LassoReadout};
 
 pub struct LassoTrainer<S: Scalar> {
     pub alpha: S,
