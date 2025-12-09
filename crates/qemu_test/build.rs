@@ -8,7 +8,11 @@ fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
     let memory_x_filename = if target.starts_with("thumbv7m-") {
-        "memory_lm3s6965.x"
+        "memory_lm3s6965.x" // Cortex-M3 (QEMU: lm3s6965evb)
+    } else if target.starts_with("thumbv7em-") {
+        "memory_mps2.x" // Cortex-M4F (QEMU: mps2-an386)
+    } else if target.starts_with("thumbv6m-") {
+        "memory_microbit.x" // Cortex-M0 (QEMU: microbit)
     } else {
         return;
     };
