@@ -1,5 +1,3 @@
-// crates/infer/src/reservoir/mod.rs
-
 #[cfg(feature = "alloc")]
 pub mod dense;
 pub mod static_reservoir;

@@ -1,5 +1,3 @@
-// crates/infer/src/readout/mod.rs
-
 #[cfg(feature = "alloc")]
 pub mod lasso;
 #[cfg(feature = "alloc")]

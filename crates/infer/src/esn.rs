@@ -16,10 +16,6 @@ use reservoir_core::Reservoir;
 
 use nalgebra::SVector;
 
-// ============================================================================
-//  Dynamic ESN (Alloc required)
-// ============================================================================
-
 #[cfg(feature = "alloc")]
 pub trait IntoInput<S: Scalar> {
     fn into_dvector(self) -> DVector<S>;
