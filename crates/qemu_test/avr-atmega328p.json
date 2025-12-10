@@ -23,7 +23,8 @@
   },
   "late-link-args": {
     "gcc": [
-      "-lgcc"
+      "-lgcc",
+      "-lc"
     ]
   }
 }
