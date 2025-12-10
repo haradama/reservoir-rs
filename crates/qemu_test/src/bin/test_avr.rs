@@ -13,6 +13,23 @@ struct AvrLogger<S> {
     serial: S,
 }
 
+impl<S> AvrLogger<S>
+where
+    S: ufmt::uWrite,
+{
+    fn print_float(&mut self, val: f32) {
+        let int_part = val as i32;
+
+        if val < 0.0 && int_part == 0 {
+            let _ = ufmt::uwrite!(&mut self.serial, "-");
+        }
+
+        let frac_part = ((val.abs() - int_part.abs() as f32) * 1000000.0) as i32;
+
+        let _ = ufmt::uwrite!(&mut self.serial, "{}.{}", int_part, frac_part);
+    }
+}
+
 impl<S> TestLogger for AvrLogger<S>
 where
     S: ufmt::uWrite,
@@ -22,27 +39,32 @@ where
     }
 
     fn log_step(&mut self, step: usize, input: f32, target: f32, pred: f32) {
-        let i_int = input as i32;
-        let i_frac = ((input.abs() - i_int.abs() as f32) * 1000.0) as i32;
-        let p_int = pred as i32;
-        let p_frac = ((pred.abs() - p_int.abs() as f32) * 1000.0) as i32;
+        let _ = ufmt::uwrite!(&mut self.serial, "Step {}: In=", step);
+        self.print_float(input);
 
-        ufmt::uwriteln!(
-            &mut self.serial,
-            "Step {}: In={}.{}, Tgt=..., Pred={}.{}",
-            step,
-            i_int,
-            i_frac,
-            p_int,
-            p_frac
-        )
-        .ok();
+        let _ = ufmt::uwrite!(&mut self.serial, ", Tgt=");
+        self.print_float(target);
+
+        let _ = ufmt::uwrite!(&mut self.serial, ", Pred=");
+        self.print_float(pred);
+
+        let _ = ufmt::uwriteln!(&mut self.serial, "");
     }
 
-    fn log_mse(&mut self, mse: f32) {
-        let m_int = mse as i32;
-        let m_frac = ((mse - m_int as f32) * 1000000.0) as i32;
-        ufmt::uwriteln!(&mut self.serial, "MSE: {}.{}", m_int, m_frac).ok();
+    fn log_metrics(&mut self, mse: f32, rmse: f32, r2: f32) {
+        let _ = ufmt::uwriteln!(&mut self.serial, "--- Metrics ---");
+
+        let _ = ufmt::uwrite!(&mut self.serial, "MSE : ");
+        self.print_float(mse);
+        let _ = ufmt::uwriteln!(&mut self.serial, "");
+
+        let _ = ufmt::uwrite!(&mut self.serial, "RMSE: ");
+        self.print_float(rmse);
+        let _ = ufmt::uwriteln!(&mut self.serial, "");
+
+        let _ = ufmt::uwrite!(&mut self.serial, "R2  : ");
+        self.print_float(r2);
+        let _ = ufmt::uwriteln!(&mut self.serial, "");
     }
 }
 

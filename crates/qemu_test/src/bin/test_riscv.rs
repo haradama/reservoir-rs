@@ -14,14 +14,6 @@ const EMU_EXIT: &str = "EMULATOR_EXIT";
 struct RiscvLogger;
 
 impl RiscvLogger {
-    fn write_str(&self, s: &str) {
-        for c in s.bytes() {
-            unsafe {
-                UART0.write_volatile(c);
-            }
-        }
-    }
-
     fn write_float(&self, val: f32) {
         let int_part = val as i32;
         let frac_part = ((val.abs() - int_part.abs() as f32) * 10000.0) as i32;
@@ -44,7 +36,15 @@ impl RiscvLogger {
         if val < 0.0 && int_part == 0 {
             let _ = ufmt::uwrite!(&mut w, "-");
         }
-        let _ = ufmt::uwrite!(&mut w, "{}.{}", int_part, frac_part);
+        if frac_part < 10 {
+            let _ = ufmt::uwrite!(&mut w, "{}.000{}", int_part, frac_part);
+        } else if frac_part < 100 {
+            let _ = ufmt::uwrite!(&mut w, "{}.00{}", int_part, frac_part);
+        } else if frac_part < 1000 {
+            let _ = ufmt::uwrite!(&mut w, "{}.0{}", int_part, frac_part);
+        } else {
+            let _ = ufmt::uwrite!(&mut w, "{}.{}", int_part, frac_part);
+        }
     }
 }
 
