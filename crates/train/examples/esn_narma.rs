@@ -26,7 +26,7 @@ fn main() {
     let targets_test = &targets[train_len..];
 
     let mut esn = ESNBuilder::new(1, 1)
-        .units(500)
+        .units(300)
         .spectral_radius(0.95)
         .leaking_rate(0.3)
         .input_scaling(0.2)

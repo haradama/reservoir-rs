@@ -29,6 +29,13 @@ jobs:
           cargo build --verbose
           cargo test --verbose
 
+      - name: Smoke Test
+        working-directory: crates/train
+        run: |
+          cargo run --example esn_mackey_glass
+          cargo run --example esn_henon
+          cargo run --example esn_narma
+
       - name: Smoke Test (AVR & ARM)
         working-directory: crates/qemu_test
         run: |
