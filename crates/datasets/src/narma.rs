@@ -98,3 +98,61 @@ impl Narma {
         (inputs, targets)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_narma_init() {
+        let params = NarmaParams {
+            n: 5,
+            ..Default::default()
+        };
+        let narma = Narma::new(params);
+
+        assert_eq!(narma.y_history.len(), 5);
+        assert_eq!(narma.u_history.len(), 5);
+        assert!(narma.y_history.iter().all(|&v| v == 0.0));
+        assert!(narma.u_history.iter().all(|&v| v == 0.0));
+    }
+
+    #[test]
+    fn test_narma_generate_size() {
+        let params = NarmaParams {
+            steps: 75,
+            ..Default::default()
+        };
+        let mut narma = Narma::new(params);
+        let (inputs, targets) = narma.generate();
+
+        assert_eq!(inputs.len(), 75);
+        assert_eq!(targets.len(), 75);
+    }
+
+    #[test]
+    fn test_narma_step_update() {
+        let params = NarmaParams {
+            n: 3,
+            seed: Some(42),
+            ..Default::default()
+        };
+        let mut narma = Narma::new(params);
+
+        let (u1, y1) = narma.step();
+        assert_ne!(u1, 0.0);
+        assert_ne!(y1, 0.0);
+
+        assert_eq!(narma.y_history.front().copied().unwrap(), 0.0);
+        assert_eq!(narma.y_history.back().copied().unwrap(), y1);
+        assert_eq!(narma.u_history.front().copied().unwrap(), 0.0);
+        assert_eq!(narma.u_history.back().copied().unwrap(), u1);
+
+        let (u2, y2) = narma.step();
+
+        assert_eq!(narma.y_history.front().copied().unwrap(), 0.0);
+        assert_eq!(narma.y_history.back().copied().unwrap(), y2);
+        assert_eq!(narma.u_history.front().copied().unwrap(), 0.0);
+        assert_eq!(narma.u_history.back().copied().unwrap(), u2);
+    }
+}

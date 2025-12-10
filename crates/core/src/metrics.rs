@@ -44,3 +44,47 @@ where
         .sum();
     T::one() - ss_res / ss_tot
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const EPS: f64 = 1e-6;
+
+    #[test]
+    fn test_mse() {
+        let y_true = vec![1.0, 2.0, 3.0, 4.0];
+        let y_pred = vec![1.1, 2.1, 2.9, 4.1];
+        let result = mse(&y_true, &y_pred);
+        assert!((result - 0.01).abs() < EPS);
+    }
+
+    #[test]
+    fn test_rmse() {
+        let y_true = vec![1.0, 2.0, 3.0, 4.0];
+        let y_pred = vec![1.1, 2.1, 2.9, 4.1];
+        let result = rmse(&y_true, &y_pred);
+        assert!((result - 0.1).abs() < EPS);
+    }
+
+    #[test]
+    fn test_nrmse() {
+        let y_true = vec![1.0, 2.0, 3.0, 4.0];
+        let y_pred = vec![1.1, 2.1, 2.9, 4.1];
+        let result = nrmse(&y_true, &y_pred);
+        assert!((result - 0.03333333333333333).abs() < EPS);
+    }
+
+    #[test]
+    fn test_rsquare() {
+        let y_true = vec![1.0, 2.0, 3.0, 4.0];
+        let y_pred_good = vec![1.1, 2.1, 2.9, 4.1];
+        let y_pred_bad = vec![3.0, 3.0, 3.0, 3.0];
+
+        let r2_good = rsquare(&y_true, &y_pred_good);
+        assert!((r2_good - 0.992).abs() < EPS);
+
+        let r2_bad = rsquare(&y_true, &y_pred_bad);
+        assert!((r2_bad - (-0.2)).abs() < EPS);
+    }
+}

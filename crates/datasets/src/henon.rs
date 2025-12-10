@@ -66,3 +66,43 @@ impl HenonMap {
         data
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const EPSILON: f64 = 1e-15;
+
+    #[test]
+    fn test_henon_map_step() {
+        let params = HenonParams {
+            a: 1.4,
+            b: 0.3,
+            x0: 0.0,
+            y0: 0.0,
+            steps: 10,
+        };
+        let mut map = HenonMap::new(params);
+
+        let next_x = map.step();
+        assert!((next_x - 1.0).abs() < EPSILON);
+        assert!((map.current_x - 1.0).abs() < EPSILON);
+        assert!((map.current_y - 0.0).abs() < EPSILON);
+
+        let next_x_2 = map.step();
+        assert!((next_x_2 - (-0.4)).abs() < EPSILON);
+        assert!((map.current_x - (-0.4)).abs() < EPSILON);
+        assert!((map.current_y - 0.3).abs() < EPSILON);
+    }
+
+    #[test]
+    fn test_henon_map_generate_size() {
+        let params = HenonParams {
+            steps: 50,
+            ..Default::default()
+        };
+        let mut map = HenonMap::new(params);
+        let data = map.generate();
+        assert_eq!(data.len(), 50);
+    }
+}

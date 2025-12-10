@@ -6,6 +6,7 @@ use alloc::vec::Vec;
 use num_traits::Float;
 use rand::{Rng, SeedableRng};
 
+#[derive(Clone, Debug)]
 pub struct MackeyGlassParams {
     pub a: f64,
     pub b: f64,
@@ -78,5 +79,47 @@ impl MackeyGlass {
 
     pub fn generate(&mut self) -> Vec<f64> {
         (0..self.params.steps).map(|_| self.step()).collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_mackey_glass_generate_size() {
+        let params = MackeyGlassParams {
+            a: 0.2,
+            b: 0.1,
+            n: 10,
+            tau: 17,
+            x0: 1.2,
+            h: 0.1,
+            steps: 100,
+            seed: Some(42),
+            history: None,
+        };
+        let mut mg = MackeyGlass::new(params);
+        let data = mg.generate();
+        assert_eq!(data.len(), 100);
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_mackey_glass_history_size() {
+        let params = MackeyGlassParams {
+            a: 0.2,
+            b: 0.1,
+            n: 10,
+            tau: 17,
+            x0: 1.2,
+            h: 0.1,
+            steps: 100,
+            seed: Some(42),
+            history: None,
+        };
+        let mg = MackeyGlass::new(params);
+        assert_eq!(mg.history.len(), 170);
     }
 }
