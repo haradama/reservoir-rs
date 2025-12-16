@@ -39,7 +39,7 @@ targets = [
 # so it should be used with care. The identifiers are [Package ID Specifications]
 # (https://doc.rust-lang.org/cargo/reference/pkgid-spec.html)
 exclude = [
-    "qemu-test"
+    "integration-test"
 ]
 # If true, metadata will be collected with `--all-features`. Note that this can't
 # be toggled off if true, if you want to conditionally enable `--all-features` it

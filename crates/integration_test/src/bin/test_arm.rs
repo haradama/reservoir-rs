@@ -7,7 +7,7 @@ compile_error!("This binary must be compiled for ARM architecture");
 use cortex_m_rt::entry;
 use cortex_m_semihosting::{debug, hprintln};
 use panic_semihosting as _;
-use qemu_test::common::{run_inference_test, TestLogger};
+use integration_test::common::{run_inference_test, TestLogger};
 
 struct ArmLogger;
 

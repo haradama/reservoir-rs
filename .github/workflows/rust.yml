@@ -38,7 +38,7 @@ jobs:
           cargo test --verbose
 
       - name: Smoke Test (AVR & ARM)
-        working-directory: crates/qemu_test
+        working-directory: crates/integration_test
         run: |
           rustup target add thumbv7m-none-eabi thumbv7em-none-eabihf thumbv6m-none-eabi
 

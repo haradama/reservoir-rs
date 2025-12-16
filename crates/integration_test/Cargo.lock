@@ -389,7 +389,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "qemu-test"
+name = "integration-test"
 version = "0.1.0"
 dependencies = [
  "arduino-hal",

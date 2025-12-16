@@ -5,7 +5,7 @@
 compile_error!("This binary must be compiled for RISC-V architecture");
 
 use panic_halt as _;
-use qemu_test::common::{run_inference_test, TestLogger};
+use integration_test::common::{run_inference_test, TestLogger};
 use riscv_rt::entry;
 
 const UART0: *mut u8 = 0x1000_0000 as *mut u8;
