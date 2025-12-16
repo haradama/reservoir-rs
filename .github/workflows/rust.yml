@@ -63,7 +63,7 @@ jobs:
 
           # --- RISC-V 32-bit ---
           echo "Running RISC-V 32-bit Smoke Test..."
-          cargo run --bin test_riscv -target riscv32imac-unknown-none-elf --features qemu -Z build-std=core
+          cargo run --bin test_riscv --target riscv32imac-unknown-none-elf --features qemu -Z build-std=core
 
           # --- x86 32-bit ---
           echo "Running x86 32-bit Smoke Test..."
