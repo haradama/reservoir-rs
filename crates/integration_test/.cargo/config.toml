@@ -43,6 +43,16 @@ runner = [
     "-kernel",
 ]
 
+[target.i686-unknown-none]
+runner = [
+    "./tools/qemu-runner.py",
+    "qemu-system-i386",
+    "-cpu", "qemu32",
+    "-display", "none",
+    "-serial", "stdio",
+    "-kernel",
+]
+
 [target.riscv32imac-unknown-none-elf]
 rustflags = ["-C", "link-arg=-Tmemory.x", "-C", "link-arg=-Tlink.x"]
 runner = [
