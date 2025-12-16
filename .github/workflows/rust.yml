@@ -40,28 +40,35 @@ jobs:
       - name: Smoke Test
         working-directory: crates/integration_test
         run: |
-          rustup target add thumbv7m-none-eabi thumbv7em-none-eabihf thumbv6m-none-eabi
+          rustup target add thumbv7m-none-eabi thumbv7em-none-eabihf thumbv6m-none-eabi wasm32-wasip1 riscv32imac-unknown-none-elf x86_64-unknown-none
+
+          echo "Running Host Smoke Test..."
+          cargo run --bin test_std --features std
+
+          echo "Running WASM Smoke Test..."
+          cargo build --bin test_std --target wasm32-wasip1 --features std
+          wasmtime target/wasm32-wasip1/debug/test_std.wasm
 
           # --- ARM (Cortex-M3 / Stellaris) ---
           echo "Running ARM Cortex-M3 Smoke Test..."
-          cargo run --bin test_arm --target thumbv7m-none-eabi --features="qemu"
+          cargo run --bin test_arm --target thumbv7m-none-eabi --features qemu -Z build-std=core
 
           # --- ARM (Cortex-M4F / MPS2) ---
           echo "Running ARM Cortex-M4F Smoke Test..."
-          cargo run --bin test_arm --target thumbv7em-none-eabihf --features="qemu"
+          cargo run --bin test_arm --target thumbv7em-none-eabihf --features qemu -Z build-std=core
 
           # --- ARM (Cortex-M0 / micro:bit) ---
           echo "Running ARM Cortex-M0 Smoke Test..."
-          cargo run --bin test_arm --target thumbv6m-none-eabi --features="qemu"
+          cargo run --bin test_arm --target thumbv6m-none-eabi --features qemu -Z build-std=core
 
           # --- RISC-V 32-bit ---
           echo "Running RISC-V 32-bit Smoke Test..."
-          cargo run --bin test_riscv -target riscv32imac-unknown-none-elf --features="qemu"
+          cargo run --bin test_riscv -target riscv32imac-unknown-none-elf --features qemu -Z build-std=core
 
           # --- x86 32-bit ---
           echo "Running x86 32-bit Smoke Test..."
-          cargo run --bin test_x86 --target i686-unknown-none.json --features="qemu"
+          cargo run --bin test_x86 --target i686-unknown-none.json --features qemu -Z build-std=core
 
           # --- AVR (ATmega328P) ---
           # echo "Running AVR Smoke Test..."
-          # cargo run --profile avr --bin test_avr -target avr-atmega328p.json --features="qemu"
+          # cargo run --profile avr --bin test_avr -target avr-atmega328p.json --features qemu -Z build-std=core

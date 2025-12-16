@@ -78,6 +78,3 @@ runner = [
     "-nographic",
     "-kernel",
 ]
-
-[unstable]
-build-std = ["core"]
