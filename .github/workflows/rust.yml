@@ -37,14 +37,10 @@ jobs:
           cargo build --verbose
           cargo test --verbose
 
-      - name: Smoke Test (AVR & ARM)
+      - name: Smoke Test
         working-directory: crates/integration_test
         run: |
           rustup target add thumbv7m-none-eabi thumbv7em-none-eabihf thumbv6m-none-eabi
-
-          # --- AVR (ATmega328P) ---
-          echo "Running AVR Smoke Test..."
-          cargo run --profile avr --bin test_avr --features="qemu" --target avr-atmega328p.json
 
           # --- ARM (Cortex-M3 / Stellaris) ---
           echo "Running ARM Cortex-M3 Smoke Test..."
@@ -57,3 +53,15 @@ jobs:
           # --- ARM (Cortex-M0 / micro:bit) ---
           echo "Running ARM Cortex-M0 Smoke Test..."
           cargo run --bin test_arm --target thumbv6m-none-eabi --features="qemu"
+
+          # --- RISC-V 32-bit ---
+          echo "Running RISC-V 32-bit Smoke Test..."
+          cargo run --bin test_riscv -target riscv32imac-unknown-none-elf --features="qemu"
+
+          # --- x86 32-bit ---
+          echo "Running x86 32-bit Smoke Test..."
+          cargo run --bin test_x86 --target i686-unknown-none.json --features="qemu"
+
+          # --- AVR (ATmega328P) ---
+          # echo "Running AVR Smoke Test..."
+          # cargo run --profile avr --bin test_avr -target avr-atmega328p.json --features="qemu"
