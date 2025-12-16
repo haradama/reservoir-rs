@@ -14,8 +14,8 @@ pub use esn::EchoStateNetwork;
 pub use readout::{LassoReadout, RidgeReadout};
 
 #[cfg(feature = "alloc")]
-pub use reservoir::DenseReservoir;
+pub use reservoir::{DenseReservoir, SparseReservoir};
 
 pub use esn::StaticESN;
 pub use readout::StaticReadout;
-pub use reservoir::StaticReservoir;
+pub use reservoir::{StaticReservoir, StaticSparseReservoir};

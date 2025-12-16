@@ -79,3 +79,8 @@ codegen-units = 1
 debug = true
 lto = true
 opt-level = "s"
+
+[profile.avr]
+inherits = "dev"
+panic = "abort"
+opt-level = "s"

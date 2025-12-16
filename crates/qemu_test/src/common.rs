@@ -2,8 +2,9 @@ use crate::weights::*;
 use heapless::Vec as HVec;
 use nalgebra::{SMatrix, SVector};
 use reservoir_core::metrics::{mse, rmse, rsquare};
-use reservoir_infer::readout::static_readout::StaticReadout;
-use reservoir_infer::reservoir::static_reservoir::StaticReservoir;
+use reservoir_infer::readout::static_readout::StaticReadout as DenseStaticReadout;
+use reservoir_infer::reservoir::static_sparse_reservoir::{StaticCsrMatrix, StaticSparseReservoir};
+use reservoir_infer::esn::{StaticReadout as StaticReadoutTrait, StaticReservoir as StaticReservoirTrait};
 
 pub trait TestLogger {
     fn log_info(&mut self, msg: &str);
@@ -12,19 +13,33 @@ pub trait TestLogger {
 }
 
 pub fn run_inference_test<L: TestLogger>(logger: &mut L) {
-    logger.log_info("Initializing Static Reservoir...");
+    logger.log_info("Initializing Static Sparse Reservoir (CSR)...");
 
-    let w_in = SMatrix::<f32, RESERVOIR_SIZE, INPUT_DIM>::from_column_slice(&W_IN_DATA);
-    let w_res = SMatrix::<f32, RESERVOIR_SIZE, RESERVOIR_SIZE>::from_column_slice(&W_RES_DATA);
-    let w_out = SMatrix::<f32, OUTPUT_DIM, EXTENDED_SIZE>::from_column_slice(&W_OUT_DATA);
-
-    let mut reservoir = StaticReservoir::<f32, INPUT_DIM, RESERVOIR_SIZE, EXTENDED_SIZE>::create(
-        w_in,
-        w_res,
-        LEAKING_RATE,
+    let w_in = StaticCsrMatrix::<f32, W_IN_NROWS, W_IN_NCOLS>::new(
+        &W_IN_ROW_PTR,
+        &W_IN_COL_IDX,
+        &W_IN_VALUES,
     );
-    reservoir.res_state = SVector::<f32, RESERVOIR_SIZE>::from_column_slice(&INITIAL_STATE_DATA);
-    let readout = StaticReadout::<f32, EXTENDED_SIZE, OUTPUT_DIM>::create(w_out);
+
+    let w_res = StaticCsrMatrix::<f32, W_RES_NROWS, W_RES_NCOLS>::new(
+        &W_RES_ROW_PTR,
+        &W_RES_COL_IDX,
+        &W_RES_VALUES,
+    );
+
+    let mut reservoir =
+        StaticSparseReservoir::<f32, INPUT_DIM, RESERVOIR_SIZE, EXTENDED_SIZE>::create(
+            w_in,
+            w_res,
+            LEAKING_RATE,
+        );
+
+    reservoir.res_state =
+        SVector::<f32, RESERVOIR_SIZE>::from_column_slice(&INITIAL_STATE_DATA);
+
+    let w_out =
+        SMatrix::<f32, OUTPUT_DIM, EXTENDED_SIZE>::from_column_slice(&W_OUT_DATA);
+    let readout = DenseStaticReadout::<f32, EXTENDED_SIZE, OUTPUT_DIM>::create(w_out);
 
     logger.log_info("Starting Inference Loop...");
 
@@ -36,8 +51,8 @@ pub fn run_inference_test<L: TestLogger>(logger: &mut L) {
 
         let input = SVector::<f32, INPUT_DIM>::new(input_val);
 
-        let state = reservoir.step(&input);
-        let output = readout.predict(state);
+        let state = reservoir.step_static(&input);
+        let output = readout.predict_static(state);
         let pred_val = output[0];
 
         let _ = predictions.push(pred_val);
@@ -45,13 +60,9 @@ pub fn run_inference_test<L: TestLogger>(logger: &mut L) {
         logger.log_step(i, input_val, target_val, pred_val);
     }
 
-    let targets = &TEST_TARGETS;
-
-    let preds = &predictions;
-
-    let mse_val = mse(targets, preds);
-    let rmse_val = rmse(targets, preds);
-    let r2_val = rsquare(targets, preds);
+    let mse_val = mse(&TEST_TARGETS, &predictions);
+    let rmse_val = rmse(&TEST_TARGETS, &predictions);
+    let r2_val = rsquare(&TEST_TARGETS, &predictions);
 
     logger.log_metrics(mse_val, rmse_val, r2_val);
 }

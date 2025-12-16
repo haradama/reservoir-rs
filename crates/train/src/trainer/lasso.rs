@@ -7,7 +7,7 @@ use reservoir_core::{
     types::{Input, Output},
     Scalar,
 };
-use reservoir_infer::{DenseReservoir, LassoReadout};
+use reservoir_infer::LassoReadout;
 
 pub struct LassoTrainer<S: Scalar> {
     pub alpha: S,
@@ -45,12 +45,16 @@ impl<S: Scalar> LassoTrainer<S> {
     }
 }
 
-impl<S: Scalar> Trainer<DenseReservoir<S>, LassoReadout<S>, S> for LassoTrainer<S> {
+impl<S, R> Trainer<R, LassoReadout<S>, S> for LassoTrainer<S>
+where
+    S: Scalar,
+    R: Reservoir<S>,
+{
     type Error = &'static str;
 
     fn fit(
         &mut self,
-        reservoir: &mut DenseReservoir<S>,
+        reservoir: &mut R,
         readout: &mut LassoReadout<S>,
         inputs: &[Input<S>],
         targets: &[Output<S>],
@@ -71,7 +75,6 @@ impl<S: Scalar> Trainer<DenseReservoir<S>, LassoReadout<S>, S> for LassoTrainer<
 
         for (i, (u, t)) in inputs.iter().zip(targets).enumerate() {
             let state = reservoir.step(u);
-
             if i >= washout {
                 xtx.ger(S::one(), state, state, S::one());
                 xty.ger(S::one(), state, t, S::one());
@@ -84,11 +87,15 @@ impl<S: Scalar> Trainer<DenseReservoir<S>, LassoReadout<S>, S> for LassoTrainer<
             let mut w = DVector::<S>::zeros(dim_x);
             let y_corr = xty.column(k);
 
-            for _iter in 0..self.max_iter {
+            for _ in 0..self.max_iter {
                 let mut max_change = S::zero();
 
                 for j in 0..dim_x {
-                    let dot = xtx.row(j).dot(&w.transpose());
+                    let mut dot = S::zero();
+                    for c in 0..dim_x {
+                        dot += xtx[(j, c)] * w[c];
+                    }
+
                     let rho = y_corr[j] - dot + xtx[(j, j)] * w[j];
                     let z_j = xtx[(j, j)];
                     let new_w_j = if z_j == S::zero() {

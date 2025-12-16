@@ -7,7 +7,7 @@ use reservoir_core::{
     trainer::Trainer,
     types::{Input, Output},
 };
-use reservoir_infer::{DenseReservoir, RidgeReadout};
+use reservoir_infer::RidgeReadout;
 
 pub struct RidgeTrainer<S: RealScalar> {
     pub ridge: S,
@@ -21,12 +21,16 @@ impl<S: RealScalar> Default for RidgeTrainer<S> {
     }
 }
 
-impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrainer<S> {
+impl<S, R> Trainer<R, RidgeReadout<S>, S> for RidgeTrainer<S>
+where
+    S: RealScalar,
+    R: Reservoir<S>,
+{
     type Error = &'static str;
 
     fn fit(
         &mut self,
-        reservoir: &mut DenseReservoir<S>,
+        reservoir: &mut R,
         readout: &mut RidgeReadout<S>,
         inputs: &[Input<S>],
         targets: &[Output<S>],
@@ -50,7 +54,6 @@ impl<S: RealScalar> Trainer<DenseReservoir<S>, RidgeReadout<S>, S> for RidgeTrai
 
         for (i, (u, t)) in inputs.iter().zip(targets).enumerate() {
             let state = reservoir.step(u);
-
             if i >= washout {
                 xtx.ger(S::one(), state, state, S::one());
                 xty.ger(S::one(), state, t, S::one());
