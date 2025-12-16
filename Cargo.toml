@@ -1,5 +1,6 @@
 [workspace]
-members = ["crates/core", "crates/infer", "crates/qemu_test", "crates/train"]
+members = ["crates/core", "crates/infer", "crates/train"]
+exclude = ["crates/qemu_test"]
 resolver = "2"
 
 [profile.avr]

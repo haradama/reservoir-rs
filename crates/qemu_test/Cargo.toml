@@ -2,6 +2,7 @@
 name = "qemu-test"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 [features]
 qemu = []
