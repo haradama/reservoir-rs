@@ -6,11 +6,10 @@ license = "Apache-2.0"
 
 [features]
 default = ["std"]
-std = ["alloc", "nalgebra/std", "num-traits/std"]
-alloc = ["nalgebra/alloc"]
+std = ["alloc", "dep:nalgebra", "nalgebra/std", "num-traits/std"]
+alloc = ["dep:nalgebra", "nalgebra/alloc"]
 libm = ["num-traits/libm", "nalgebra/libm"]
 
 [dependencies]
-heapless = "0.9.2"
 nalgebra = { version = "0.33.2", default-features = false, optional = true }
 num-traits = { version = "0.2.19", default-features = false }
