@@ -41,6 +41,7 @@ jobs:
         working-directory: crates/integration_test
         run: |
           rustup target add thumbv7m-none-eabi thumbv7em-none-eabihf thumbv6m-none-eabi wasm32-wasip1 riscv32imac-unknown-none-elf x86_64-unknown-none
+          cargo install wasmtime-cli
 
           echo "Running Host Smoke Test..."
           cargo run --bin test_std --features std
