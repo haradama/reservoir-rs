@@ -1,4 +1,4 @@
 [workspace]
 members = ["crates/core", "crates/infer", "crates/train"]
-exclude = ["crates/integration_test", "crates/datasets"]
+exclude = ["integration_test", "crates/datasets"]
 resolver = "2"
