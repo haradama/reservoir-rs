@@ -3,6 +3,13 @@ use reservoir_core::types::Scalar;
 
 use crate::esn::StaticReservoir as StaticReservoirTrait;
 
+/// Static CSR matrix backed by borrowed slices.
+///
+/// This structure is intended for embedded / `no_std` use-cases where
+/// you want to store sparse matrices in ROM/flash and avoid allocation.
+///
+/// # Panics
+/// [`new`] validates CSR invariants and panics if they are violated.
 #[derive(Debug, Clone, Copy)]
 pub struct StaticCsrMatrix<'a, S: Scalar, const ROWS: usize, const COLS: usize> {
     pub row_ptr: &'a [u16],
@@ -11,6 +18,12 @@ pub struct StaticCsrMatrix<'a, S: Scalar, const ROWS: usize, const COLS: usize> 
 }
 
 impl<'a, S: Scalar, const ROWS: usize, const COLS: usize> StaticCsrMatrix<'a, S, ROWS, COLS> {
+    /// Construct a static CSR matrix and validate invariants.
+    ///
+    /// Invariants:
+    /// - `row_ptr.len() == ROWS + 1`
+    /// - `col_idx.len() == values.len()`
+    /// - `row_ptr[ROWS] == nnz`
     #[inline]
     pub fn new(row_ptr: &'a [u16], col_idx: &'a [u16], values: &'a [S]) -> Self {
         assert_eq!(row_ptr.len(), ROWS + 1, "CSR row_ptr length mismatch");
@@ -29,6 +42,9 @@ impl<'a, S: Scalar, const ROWS: usize, const COLS: usize> StaticCsrMatrix<'a, S,
         }
     }
 
+    /// Accumulate `y += A * x`.
+    ///
+    /// Column indices are checked with a `debug_assert` style guard.
     #[inline]
     pub fn matvec_add(&self, x: &SVector<S, COLS>, y: &mut SVector<S, ROWS>) {
         for r in 0..ROWS {
@@ -49,6 +65,11 @@ impl<'a, S: Scalar, const ROWS: usize, const COLS: usize> StaticCsrMatrix<'a, S,
     }
 }
 
+/// Static sparse reservoir composed from two [`StaticCsrMatrix`] matrices.
+///
+/// Extended state layout:
+/// `[bias(1), input(IN), reservoir_state(N)]`
+/// so `EXT` should usually be `1 + IN + N`.
 #[derive(Debug, Clone)]
 pub struct StaticSparseReservoir<'a, S: Scalar, const IN: usize, const N: usize, const EXT: usize> {
     pub w_in: StaticCsrMatrix<'a, S, N, IN>,
@@ -61,6 +82,7 @@ pub struct StaticSparseReservoir<'a, S: Scalar, const IN: usize, const N: usize,
 impl<'a, S: Scalar, const IN: usize, const N: usize, const EXT: usize>
     StaticSparseReservoir<'a, S, IN, N, EXT>
 {
+    /// Create a static sparse reservoir (states are zero-initialized).
     #[inline]
     pub fn create(
         w_in: StaticCsrMatrix<'a, S, N, IN>,
@@ -76,6 +98,7 @@ impl<'a, S: Scalar, const IN: usize, const N: usize, const EXT: usize>
         }
     }
 
+    /// Advance one step and return the extended state.
     #[inline]
     pub fn step(&mut self, input: &SVector<S, IN>) -> &SVector<S, EXT> {
         let mut pre: SVector<S, N> = SVector::zeros();
@@ -118,7 +141,6 @@ mod tests {
 
     #[test]
     fn test_static_csr_new_ok() {
-        // 2x2 identity: row_ptr len=3, nnz=2
         let row_ptr: [u16; 3] = [0, 1, 2];
         let col_idx: [u16; 2] = [0, 1];
         let values: [f64; 2] = [1.0, 1.0];
@@ -128,7 +150,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "CSR row_ptr length mismatch")]
     fn test_static_csr_new_rowptr_len_mismatch_panics() {
-        let row_ptr: [u16; 2] = [0, 0]; // should be ROWS+1=3
+        let row_ptr: [u16; 2] = [0, 0];
         let col_idx: [u16; 0] = [];
         let values: [f64; 0] = [];
         let _ = StaticCsrMatrix::<f64, 2, 2>::new(&row_ptr, &col_idx, &values);
@@ -146,7 +168,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "CSR row_ptr[ROWS] != nnz")]
     fn test_static_csr_new_nnz_mismatch_panics() {
-        let row_ptr: [u16; 3] = [0, 1, 3]; // last says nnz=3 but actually 2
+        let row_ptr: [u16; 3] = [0, 1, 3];
         let col_idx: [u16; 2] = [0, 1];
         let values: [f64; 2] = [1.0, 1.0];
         let _ = StaticCsrMatrix::<f64, 2, 2>::new(&row_ptr, &col_idx, &values);
@@ -154,14 +176,11 @@ mod tests {
 
     #[test]
     fn test_static_sparse_reservoir_step_layout() {
-        // IN=2, N=2, EXT=5
-        // w: zero (no nnz)
         let w_row_ptr: [u16; 3] = [0, 0, 0];
         let w_col_idx: [u16; 0] = [];
         let w_values: [f64; 0] = [];
         let w = StaticCsrMatrix::<f64, 2, 2>::new(&w_row_ptr, &w_col_idx, &w_values);
 
-        // w_in: identity 2x2
         let win_row_ptr: [u16; 3] = [0, 1, 2];
         let win_col_idx: [u16; 2] = [0, 1];
         let win_values: [f64; 2] = [1.0, 1.0];

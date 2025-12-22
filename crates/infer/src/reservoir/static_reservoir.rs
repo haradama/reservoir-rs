@@ -3,6 +3,14 @@ use reservoir_core::types::Scalar;
 
 use crate::esn::StaticReservoir as StaticReservoirTrait;
 
+/// Static (stack-allocated) dense reservoir.
+///
+/// This is a `no_std`-friendly reservoir implementation using fixed-size
+/// matrices and vectors.
+///
+/// The extended state is laid out as:
+/// `[bias(1), input(IN), reservoir_state(N)]`
+/// so `EXT` should usually be `1 + IN + N`.
 #[derive(Debug, Clone)]
 pub struct StaticReservoir<S: Scalar, const IN: usize, const N: usize, const EXT: usize> {
     pub w_in: SMatrix<S, N, IN>,
@@ -13,6 +21,9 @@ pub struct StaticReservoir<S: Scalar, const IN: usize, const N: usize, const EXT
 }
 
 impl<S: Scalar, const IN: usize, const N: usize, const EXT: usize> StaticReservoir<S, IN, N, EXT> {
+    /// Create a static reservoir.
+    ///
+    /// `res_state` and `ext_state` are zero-initialized.
     pub fn create(w_in: SMatrix<S, N, IN>, w: SMatrix<S, N, N>, leaking_rate: S) -> Self {
         Self {
             w_in,
@@ -23,6 +34,7 @@ impl<S: Scalar, const IN: usize, const N: usize, const EXT: usize> StaticReservo
         }
     }
 
+    /// Advance one step and return the extended state.
     pub fn step(&mut self, input: &SVector<S, IN>) -> &SVector<S, EXT> {
         let pre = self.w * self.res_state + self.w_in * input;
         let act = pre.map(|x| x.activation());
@@ -57,7 +69,6 @@ mod tests {
 
     #[test]
     fn test_static_reservoir_step_layout() {
-        // IN=2, N=2, EXT=1+IN+N=5
         let w = SMatrix::<f64, 2, 2>::zeros();
         let w_in = SMatrix::<f64, 2, 2>::identity();
         let mut r = StaticReservoir::<f64, 2, 2, 5>::create(w_in, w, 1.0);

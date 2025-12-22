@@ -1,23 +1,36 @@
 use nalgebra::DMatrix;
 use reservoir_core::{readout::Readout, types::*};
 
+/// Linear readout backed by a dense matrix (`DMatrix`).
+///
+/// Despite the name "Ridge", this type is **inference-only**:
+/// it stores `W_out` and computes `y = W_out * state`.
+/// Training / L2-regularized fitting is out of scope for this crate.
+///
+/// # Dimensions
+/// - `w_out`: (output_dim x state_dim)
 #[derive(Debug, Clone)]
 pub struct RidgeReadout<S: Scalar> {
+    /// Output weight matrix `W_out` (output_dim x state_dim).
     pub w_out: DMatrix<S>,
+    /// Cached output dimension (`w_out.nrows()`).
     pub output_dim: usize,
 }
 
 impl<S: Scalar> RidgeReadout<S> {
+    /// Construct a readout from a weight matrix.
     pub fn create(w_out: DMatrix<S>) -> Self {
         let output_dim = w_out.nrows();
         Self { w_out, output_dim }
     }
 
+    /// Replace the weight matrix (updates `output_dim`).
     pub fn set_weights(&mut self, w: DMatrix<S>) {
         self.output_dim = w.nrows();
         self.w_out = w;
     }
 
+    /// Borrow the weight matrix.
     pub fn weights(&self) -> &DMatrix<S> {
         &self.w_out
     }

@@ -7,6 +7,14 @@ use nalgebra::DVector;
 use reservoir_core::{reservoir::Reservoir, types::*};
 
 #[cfg(feature = "alloc")]
+/// A minimal Compressed Sparse Row (CSR) matrix representation.
+///
+/// This is optimized for repeated matrix-vector multiplication used in ESN updates.
+///
+/// # Invariants
+/// - `row_ptr.len() == nrows + 1`
+/// - `col_idx.len() == values.len()`
+/// - `row_ptr[nrows] == values.len()` (number of non-zeros)
 #[derive(Debug, Clone)]
 pub struct CsrMatrix<S: Scalar> {
     pub nrows: usize,
@@ -18,6 +26,9 @@ pub struct CsrMatrix<S: Scalar> {
 
 #[cfg(feature = "alloc")]
 impl<S: Scalar> CsrMatrix<S> {
+    /// Compute `y = A * x`.
+    ///
+    /// `y` is fully overwritten (filled with zeros then written).
     #[inline]
     pub fn matvec(&self, x: &DVector<S>, y: &mut DVector<S>) {
         debug_assert_eq!(x.len(), self.ncols);
@@ -36,6 +47,7 @@ impl<S: Scalar> CsrMatrix<S> {
         }
     }
 
+    /// Compute `y += A * x` (accumulating into `y`).
     #[inline]
     pub fn matvec_add(&self, x: &DVector<S>, y: &mut DVector<S>) {
         debug_assert_eq!(x.len(), self.ncols);
@@ -55,6 +67,13 @@ impl<S: Scalar> CsrMatrix<S> {
 }
 
 #[cfg(feature = "alloc")]
+/// Sparse ESN reservoir using CSR matrices for `W` and `W_in`.
+///
+/// Update rule matches the dense reservoir, but matrix-vector products are
+/// performed using CSR accumulation.
+///
+/// The returned state is an **extended state** vector:
+/// `[bias(1), input(input_dim), reservoir_state(units)]`.
 #[derive(Debug, Clone)]
 pub struct SparseReservoir<S: Scalar> {
     pub w_in: CsrMatrix<S>,
@@ -65,11 +84,15 @@ pub struct SparseReservoir<S: Scalar> {
     pub res_state: DVector<S>,
     pub ext_state: DVector<S>,
 
+    /// Scratch buffer for pre-activation values.
     pre: DVector<S>,
 }
 
 #[cfg(feature = "alloc")]
 impl<S: Scalar> SparseReservoir<S> {
+    /// Create a sparse reservoir from CSR matrices.
+    ///
+    /// `units` is inferred from `w.nrows`.
     pub fn create(w_in: CsrMatrix<S>, w: CsrMatrix<S>, leaking_rate: S, input_dim: usize) -> Self {
         let units = w.nrows;
         Self {
@@ -83,6 +106,7 @@ impl<S: Scalar> SparseReservoir<S> {
         }
     }
 
+    /// Rebuild the extended state layout `[bias, input..., res_state...]`.
     fn rebuild_ext_state(&mut self, input: &Input<S>) {
         self.ext_state[0] = S::one();
         self.ext_state.rows_mut(1, self.input_dim).copy_from(input);
@@ -133,7 +157,6 @@ mod tests {
 
     #[test]
     fn test_csr_matvec_and_matvec_add() {
-        // 2x2 Identity
         let csr = CsrMatrix::<f64> {
             nrows: 2,
             ncols: 2,
@@ -157,8 +180,6 @@ mod tests {
 
     #[test]
     fn test_sparse_reservoir_step_ext_state_layout_leaking_1() {
-        // units=2, input_dim=2
-        // w: zero
         let w = CsrMatrix::<f64> {
             nrows: 2,
             ncols: 2,
@@ -166,7 +187,7 @@ mod tests {
             col_idx: vec![],
             values: vec![],
         };
-        // w_in: identity (2x2)
+
         let w_in = CsrMatrix::<f64> {
             nrows: 2,
             ncols: 2,

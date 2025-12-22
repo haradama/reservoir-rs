@@ -2,16 +2,28 @@ use crate::esn::StaticReadout as StaticReadoutTrait;
 use nalgebra::{SMatrix, SVector};
 use reservoir_core::types::Scalar;
 
+/// Static (stack-allocated) linear readout.
+///
+/// This is the `no_std`-friendly counterpart to dynamic readouts:
+/// it computes `y = W_out * state` using fixed-size matrices/vectors.
+///
+/// # Dimensions
+/// - `IN_DIM`: extended state dimension
+/// - `OUT_DIM`: output dimension
 #[derive(Debug, Clone)]
 pub struct StaticReadout<S: Scalar, const IN_DIM: usize, const OUT_DIM: usize> {
+    /// Output weight matrix `W_out` (OUT_DIM x IN_DIM).
     pub w_out: SMatrix<S, OUT_DIM, IN_DIM>,
 }
 
 impl<S: Scalar, const IN_DIM: usize, const OUT_DIM: usize> StaticReadout<S, IN_DIM, OUT_DIM> {
+    /// Construct from a weight matrix.
     pub fn create(w_out: SMatrix<S, OUT_DIM, IN_DIM>) -> Self {
         Self { w_out }
     }
 
+    /// Predict from an extended state vector.
+    #[inline]
     pub fn predict(&self, state: &SVector<S, IN_DIM>) -> SVector<S, OUT_DIM> {
         self.w_out * state
     }

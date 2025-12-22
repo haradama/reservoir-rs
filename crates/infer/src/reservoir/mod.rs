@@ -1,3 +1,13 @@
+//! Reservoir implementations for ESN inference.
+//!
+//! This module provides:
+//! - Dynamic reservoirs (behind `alloc`) using `nalgebra::DVector/DMatrix`
+//! - Static reservoirs designed for `no_std` use, using `nalgebra::SVector/SMatrix`
+//!
+//! Many reservoirs here return an **extended state** vector typically laid out as:
+//! `[bias(1), input(input_dim), reservoir_state(units)]`.
+//! Readouts are expected to be sized accordingly.
+
 #[cfg(feature = "alloc")]
 pub mod dense;
 #[cfg(feature = "alloc")]

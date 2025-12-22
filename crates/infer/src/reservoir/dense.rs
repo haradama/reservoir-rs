@@ -1,18 +1,42 @@
 use nalgebra::{DMatrix, DVector};
 use reservoir_core::{reservoir::Reservoir, types::*};
 
+/// Dense ESN reservoir using dense matrices.
+///
+/// The reservoir update is the classic leaky-integrator ESN:
+///
+/// - `pre = W * r + W_in * u`
+/// - `act = activation(pre)`
+/// - `r <- (1 - leaking_rate) * r + leaking_rate * act`
+///
+/// The returned state is an **extended state** vector:
+/// `[bias(1), input(input_dim), reservoir_state(units)]`.
+///
+/// # Notes
+/// - `activation()` is provided by the [`Scalar`] implementation in `reservoir-core`.
+/// - This is an inference-only component: weight initialization / training is out of scope.
 #[derive(Debug, Clone)]
 pub struct DenseReservoir<S: Scalar> {
+    /// Input weight matrix `W_in` (units x input_dim).
     pub w_in: DMatrix<S>,
+    /// Recurrent weight matrix `W` (units x units).
     pub w: DMatrix<S>,
+    /// Leaking rate in `[0, 1]` for leaky integration.
     pub leaking_rate: S,
+    /// Input dimension used to construct the extended state.
     pub input_dim: usize,
 
+    /// Reservoir state `r` (units).
     pub res_state: DVector<S>,
+    /// Extended state `[1, input..., r...]` (1 + input_dim + units).
     pub ext_state: DVector<S>,
 }
 
 impl<S: Scalar> DenseReservoir<S> {
+    /// Create a dense reservoir.
+    ///
+    /// `units` determines the internal reservoir dimension.
+    /// `ext_state` is initialized with length `1 + input_dim + units`.
     pub fn create(
         w_in: DMatrix<S>,
         w: DMatrix<S>,
@@ -30,6 +54,7 @@ impl<S: Scalar> DenseReservoir<S> {
         }
     }
 
+    /// Rebuild the extended state layout `[bias, input..., res_state...]`.
     fn rebuild_ext_state(&mut self, input: &Input<S>) {
         self.ext_state[0] = S::one();
         self.ext_state.rows_mut(1, self.input_dim).copy_from(input);
@@ -73,7 +98,6 @@ mod tests {
 
     #[test]
     fn test_dense_reservoir_step_ext_state_layout_leaking_1() {
-        // units=2, input_dim=2
         let w = DMatrix::<f64>::zeros(2, 2);
         let w_in = DMatrix::<f64>::from_row_slice(2, 2, &[1.0, 0.0, 0.0, 1.0]);
         let mut r = DenseReservoir::create(w_in, w, 1.0, 2, 2);

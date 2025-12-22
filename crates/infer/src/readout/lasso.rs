@@ -1,23 +1,50 @@
 use nalgebra::DMatrix;
 use reservoir_core::{readout::Readout, types::*};
 
+/// Linear readout backed by a dense matrix (`DMatrix`).
+///
+/// Despite the name "Lasso", this type is **inference-only**:
+/// it simply stores `W_out` and computes `y = W_out * state`.
+/// Training / L1-regularized fitting is out of scope for this crate.
+///
+/// # Dimensions
+/// - `w_out`: (output_dim x state_dim)
+///
+/// # Example
+/// ```rust,ignore
+/// use reservoir_infer::LassoReadout;
+/// use nalgebra::{DMatrix, DVector};
+///
+/// let w_out = DMatrix::<f64>::from_row_slice(2, 3, &[1.0,2.0,3.0, 0.0,1.0,0.5]);
+/// let ro = LassoReadout::create(w_out);
+/// let state = DVector::from_vec(vec![10.0, 2.0, 1.0]);
+/// let y = ro.predict(&state);
+/// # let _ = y;
+/// ```
 #[derive(Debug, Clone)]
 pub struct LassoReadout<S: Scalar> {
+    /// Output weight matrix `W_out` (output_dim x state_dim).
     pub w_out: DMatrix<S>,
+    /// Cached output dimension (`w_out.nrows()`).
     pub output_dim: usize,
 }
 
 impl<S: Scalar> LassoReadout<S> {
+    /// Construct a readout from a weight matrix.
     pub fn create(w_out: DMatrix<S>) -> Self {
         let output_dim = w_out.nrows();
         Self { w_out, output_dim }
     }
 
+    /// Replace the weight matrix.
+    ///
+    /// This updates `output_dim` to match the new matrix.
     pub fn set_weights(&mut self, w: DMatrix<S>) {
         self.output_dim = w.nrows();
         self.w_out = w;
     }
 
+    /// Borrow the weight matrix.
     pub fn weights(&self) -> &DMatrix<S> {
         &self.w_out
     }

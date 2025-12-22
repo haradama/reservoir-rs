@@ -1,3 +1,11 @@
+//! Readout implementations for ESN inference.
+//!
+//! Readouts map the (extended) reservoir state into an output vector.
+//! In this crate, dynamic readouts are linear maps using `nalgebra::DMatrix`,
+//! while the static readout uses `nalgebra::SMatrix` for `no_std`.
+//!
+//! Note: These types do not train. You provide the weight matrix.
+
 #[cfg(feature = "alloc")]
 pub mod lasso;
 #[cfg(feature = "alloc")]
