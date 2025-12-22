@@ -1,4 +1,10 @@
 [workspace]
-members = ["crates/core", "crates/infer", "crates/train"]
-exclude = ["integration_test", "crates/datasets"]
+members = ["crates/core", "crates/infer", "crates/train", "crates/datasets"]
+exclude = ["integration_test"]
 resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+readme = "README.md"
+version = "0.1.0"

@@ -1,8 +1,13 @@
 [package]
 name = "reservoir-train"
-version = "0.1.0"
-edition = "2021"
-license = "Apache-2.0"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+readme.workspace = true
+repository = "https://github.com/haradama/reservoir-rs/tree/main/crates/train"
+documentation = "https://docs.rs/reservoir-train"
+homepage = "https://github.com/haradama/reservoir-rs/tree/main/crates/train"
+keywords = ["reservoir", "echo state network", "machine-learning", "data"]
 
 [features]
 default = ["std"]

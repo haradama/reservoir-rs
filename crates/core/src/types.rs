@@ -8,6 +8,18 @@ use core::marker::PhantomData;
 use nalgebra::{DMatrix, DVector};
 use num_traits::{One, Zero};
 
+/// Scalar type used throughout this workspace.
+///
+/// # Requirements
+/// - Must be `Copy` and arithmetic-friendly.
+/// - Must provide:
+///   - `activation()` : nonlinearity used in reservoirs (default impl uses tanh for floats)
+///   - `from_f64_val()` / `to_f64_val()` : conversions for initialization / diagnostics
+///   - `abs_val()` : absolute value (used in solvers)
+///
+/// # Notes
+/// This trait is intentionally minimal and focuses on **embedded-friendly** usage.
+/// Most implementations in this workspace target `f32` / `f64`.
 pub trait Scalar:
     Copy
     + Send
@@ -27,9 +39,18 @@ pub trait Scalar:
     + DivAssign
     + PartialOrd
 {
+    /// Activation function used inside reservoir state update.
+    ///
+    /// By default, float implementations use `tanh`.
     fn activation(self) -> Self;
+
+    /// Convert from `f64` for initialization / parameter plumbing.
     fn from_f64_val(v: f64) -> Self;
+
+    /// Convert to `f64` for diagnostics (e.g., spectral radius estimation).
     fn to_f64_val(self) -> f64;
+
+    /// Absolute value.
     fn abs_val(self) -> Self;
 }
 

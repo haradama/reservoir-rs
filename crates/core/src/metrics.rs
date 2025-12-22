@@ -1,6 +1,16 @@
 use core::iter::Sum;
 use num_traits::Float;
 
+/// Mean Squared Error (MSE).
+///
+/// # Panics
+/// Panics if `y_true.len() == 0`.
+/// (Division by zero)
+///
+/// # Notes
+/// This function assumes `y_true.len() == y_pred.len()`.
+/// If lengths differ, extra elements are ignored due to `zip`.
+#[must_use]
 pub fn mse<T>(y_true: &[T], y_pred: &[T]) -> T
 where
     T: Float + Sum<T>,
@@ -13,6 +23,11 @@ where
         / T::from(y_true.len()).unwrap()
 }
 
+/// Root Mean Squared Error (RMSE) = sqrt(MSE).
+///
+/// # Panics
+/// Panics if `y_true.len() == 0`.
+#[must_use]
 pub fn rmse<T>(y_true: &[T], y_pred: &[T]) -> T
 where
     T: Float + Sum<T>,
@@ -20,6 +35,15 @@ where
     mse(y_true, y_pred).sqrt()
 }
 
+/// Normalized RMSE using `(max(y_true) - min(y_true))`.
+///
+/// # Panics
+/// Panics if `y_true.len() == 0`.
+///
+/// # Notes
+/// If all `y_true` values are equal, range becomes zero and the result
+/// becomes `inf` / `nan` depending on `T`.
+#[must_use]
 pub fn nrmse<T>(y_true: &[T], y_pred: &[T]) -> T
 where
     T: Float + Sum<T>,
@@ -31,6 +55,16 @@ where
     rmse / range
 }
 
+/// Coefficient of determination (R²).
+///
+/// `R² = 1 - SS_res / SS_tot`.
+///
+/// # Panics
+/// Panics if `y_true.len() == 0`.
+///
+/// # Notes
+/// If `SS_tot == 0` (constant target), the result becomes `nan` / `inf`.
+#[must_use]
 pub fn rsquare<T>(y_true: &[T], y_pred: &[T]) -> T
 where
     T: Float + Sum<T>,
