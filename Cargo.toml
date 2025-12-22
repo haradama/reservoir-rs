@@ -8,3 +8,9 @@ edition = "2021"
 license = "Apache-2.0"
 readme = "README.md"
 version = "0.1.0"
+
+[workspace.dependencies]
+reservoir-core = { version = "0.1.0", path = "crates/core", default-features = false }
+reservoir-infer = { version = "0.1.0", path = "crates/infer", default-features = false }
+reservoir-datasets = { version = "0.1.0", path = "crates/datasets", default-features = false }
+reservoir-train = { version = "0.1.0", path = "crates/train", default-features = false }

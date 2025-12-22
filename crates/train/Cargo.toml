@@ -26,8 +26,8 @@ libm = [
 ]
 
 [dependencies]
-reservoir-core = { path = "../core", default-features = false }
-reservoir-infer = { path = "../infer", default-features = false }
+reservoir-core = {  workspace = true, default-features = false }
+reservoir-infer = {  workspace = true, default-features = false }
 nalgebra = { version = "0.33.2", default-features = false, features = [
     "alloc",
 ] }
