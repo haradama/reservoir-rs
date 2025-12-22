@@ -1,3 +1,8 @@
+//! ESN training example on the Mackey–Glass time series.
+//!
+//! This example trains and evaluates on the same generated sequence
+//! (no explicit train/test split), demonstrating end-to-end usage.
+
 use reservoir_core::{rmse, rsquare};
 use reservoir_datasets::mackey_glass::{MackeyGlass, MackeyGlassParams};
 use reservoir_train::{ESNBuilder, ESNFitRidge};

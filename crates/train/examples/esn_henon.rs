@@ -1,3 +1,10 @@
+//! ESN training example on the Hénon map time series.
+//!
+//! This example:
+//! 1. Generates a 1D Hénon map sequence
+//! 2. Trains an ESN with ridge regression readout
+//! 3. Evaluates RMSE and R^2 on a held-out segment
+
 use reservoir_core::{rmse, rsquare};
 use reservoir_datasets::henon::{HenonMap, HenonParams};
 use reservoir_train::{ESNBuilder, ESNFitRidge};

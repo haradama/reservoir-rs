@@ -9,7 +9,21 @@ use reservoir_core::{
 };
 use reservoir_infer::RidgeReadout;
 
+/// Ridge regression trainer for linear readouts.
+///
+/// This trainer accumulates:
+/// - `X^T X` and `X^T Y` from reservoir states (after `washout`)
+/// then solves:
+/// - `(X^T X + ridge * I) W = X^T Y`
+///
+/// The readout stores weights as `W_out` (output_dim x state_dim),
+/// so the solved matrix is transposed before being set.
+///
+/// # Errors
+/// Returns static string errors for common input validation failures or
+/// linear solve failures.
 pub struct RidgeTrainer<S: RealScalar> {
+    /// L2 regularization added to diagonal of `X^T X`.
     pub ridge: S,
 }
 

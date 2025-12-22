@@ -14,10 +14,76 @@ use reservoir_infer::{
     DenseReservoir, EchoStateNetwork, LassoReadout, RidgeReadout, SparseReservoir,
 };
 
+/// Echo State Network (ESN) training helpers and model builders.
+///
+/// This module provides two layers of functionality:
+///
+/// 1. **Convenience traits** ([`ESNFitRidge`], [`ESNFitLasso`]) to train common ESN
+///    combinations with a single method call using `Vec<Vec<S>>` inputs/targets.
+/// 2. A configurable **builder** ([`ESNBuilder`]) to construct randomly initialized ESNs
+///    (dense or sparse reservoirs, ridge or lasso readouts), with deterministic seeding.
+///
+/// The runtime reservoir / readout implementations are provided by `reservoir-infer`,
+/// while the optimization logic (ridge / lasso solvers) is implemented in `crate::trainer`.
+///
+/// # Feature and environment notes
+/// - This crate is `no_std`-friendly, but relies on `alloc` for training-time data structures.
+/// - Random generation uses `rand` and the crate-defined [`RngType`], which maps to:
+///   - `StdRng` under the `std` feature
+///   - `SmallRng` under `no_std`
+///
+/// # Design choices
+/// - The builder generates *untrained* reservoirs/readouts. Training is performed via
+///   [`ESNFitRidge`] / [`ESNFitLasso`] or by directly using the lower-level [`Trainer`] API.
+/// - The dense reservoir uses eigenvalue computation to scale to a target spectral radius.
+/// - The sparse reservoir uses power iteration to estimate the spectral radius cheaply.
+///
+/// # Examples
+/// Ridge training with dense reservoir:
+/// ```no_run
+/// # use reservoir_train::{ESNBuilder, ESNFitRidge};
+/// let mut esn = ESNBuilder::<f32>::new(1, 1)
+///     .units(200)
+///     .spectral_radius(1.2)
+///     .leaking_rate(0.8)
+///     .input_scaling(1.0)
+///     .seed(42)
+///     .build();
+///
+/// // inputs/targets are `Vec<Vec<f32>>`
+/// // esn.fit(&inputs, &targets, 1e-6, 50);
+/// ```
+///
+/// Lasso training with sparse reservoir:
+/// ```no_run
+/// # use reservoir_train::{ESNBuilder, ESNFitLasso};
+/// let mut esn = ESNBuilder::<f32>::new(1, 1)
+///     .units(300)
+///     .connectivity(8)
+///     .input_connectivity(1)
+///     .spectral_radius(0.95)
+///     .leaking_rate(0.3)
+///     .seed(7)
+///     .build_sparse_lasso();
+///
+/// // esn.fit_lasso(&inputs, &targets, 1e-4, 1000, 1e-6, 50);
+/// ```
 pub trait ESNFitRidge<S>
 where
     S: RealScalar,
 {
+    /// Train the ESN readout weights using ridge regression.
+    ///
+    /// This is a convenience wrapper around [`RidgeTrainer`]. Inputs and targets
+    /// are provided as `Vec<Vec<S>>` and are internally converted to `nalgebra::DVector`
+    /// (`reservoir_core::types::Input` / `Output`).
+    ///
+    /// - `ridge`: L2 regularization strength (added to the diagonal of `X^T X`).
+    /// - `washout`: number of initial time steps to ignore (state warm-up).
+    ///
+    /// # Panics
+    /// This method panics if training fails. If you need fallible behavior, call the
+    /// underlying trainer directly through the [`Trainer`] trait.
     fn fit(&mut self, inputs: &[Vec<S>], targets: &[Vec<S>], ridge: S, washout: usize);
 }
 
@@ -63,10 +129,24 @@ where
     }
 }
 
+/// Convenience training API for ESNs using LASSO (L1) regression.
+///
+/// This trait mirrors [`ESNFitRidge`], but uses coordinate-descent LASSO training
+/// implemented by [`LassoTrainer`].
 pub trait ESNFitLasso<S>
 where
     S: Scalar,
 {
+    /// Train the ESN readout weights using LASSO regression.
+    ///
+    /// - `alpha`: L1 regularization strength (sparsity control).
+    /// - `max_iter`: maximum coordinate-descent iterations per output dimension.
+    /// - `tol`: convergence threshold (max coefficient change).
+    /// - `washout`: number of initial steps to ignore.
+    ///
+    /// # Panics
+    /// This method panics if training fails. If you need fallible behavior, call the
+    /// underlying trainer directly through the [`Trainer`] trait.
     fn fit_lasso(
         &mut self,
         inputs: &[Vec<S>],
@@ -136,6 +216,31 @@ where
     }
 }
 
+/// Builder for randomly initialized Echo State Networks.
+///
+/// [`ESNBuilder`] produces an [`EchoStateNetwork`] with:
+/// - a **dense** or **sparse** reservoir, and
+/// - a **ridge** or **lasso** readout (initialized randomly).
+///
+/// The builder is deterministic with respect to [`seed`](ESNBuilder::seed).
+///
+/// # Parameters
+/// - `input_dim`, `output_dim`: external I/O dimensions.
+/// - `units`: number of reservoir neurons.
+/// - `spectral_radius`: target spectral radius of the reservoir recurrence.
+/// - `input_scaling`: scaling applied to input weights.
+/// - `leaking_rate`: leaky integrator coefficient (1.0 = no leak / fully new state).
+/// - `connectivity`: (sparse) non-zeros per row in recurrent weight CSR matrix.
+/// - `input_connectivity`: (sparse) non-zeros per row in input weight CSR matrix.
+///
+/// # Reservoir scaling
+/// - Dense: computes eigenvalues (via `nalgebra`) and rescales the matrix exactly.
+/// - Sparse: estimates spectral radius via power iteration and rescales approximately.
+///
+/// # Output dimension of the reservoir
+/// `reservoir-infer` reservoirs expose an *extended state* with the layout:
+/// `1 (bias) + input_dim + units`.
+/// Readout weights are initialized to map this extended state to `output_dim`.
 pub struct ESNBuilder<S: Scalar> {
     input_dim: usize,
     output_dim: usize,
@@ -152,6 +257,16 @@ pub struct ESNBuilder<S: Scalar> {
 }
 
 impl<S: Scalar> ESNBuilder<S> {
+    /// Create a new builder with default hyperparameters.
+    ///
+    /// Defaults:
+    /// - `units = 100`
+    /// - `spectral_radius = 1`
+    /// - `input_scaling = 1`
+    /// - `leaking_rate = 1`
+    /// - `seed = 42`
+    /// - `connectivity = 8` (sparse recurrent)
+    /// - `input_connectivity = max(input_dim, 1)` (sparse input)
     pub fn new(input_dim: usize, output_dim: usize) -> Self {
         Self {
             input_dim,
@@ -167,37 +282,60 @@ impl<S: Scalar> ESNBuilder<S> {
         }
     }
 
+    /// Set the number of reservoir units.
     pub fn units(mut self, n: usize) -> Self {
         self.units = n;
         self
     }
+
+    /// Set the target spectral radius of the recurrent weight matrix.
     pub fn spectral_radius(mut self, r: S) -> Self {
         self.spectral_radius = r;
         self
     }
+
+    /// Set the scaling applied to input weights.
     pub fn input_scaling(mut self, s: S) -> Self {
         self.input_scaling = s;
         self
     }
+
+    /// Set the leaking rate `α` used by the reservoir update.
+    ///
+    /// Typical range is `(0, 1]`.
     pub fn leaking_rate(mut self, a: S) -> Self {
         self.leaking_rate = a;
         self
     }
+
+    /// Set the RNG seed used for all random initialization.
     pub fn seed(mut self, s: u64) -> Self {
         self.seed = s;
         self
     }
 
+    /// Set sparse recurrent connectivity: number of non-zeros per row in `W_res`.
+    ///
+    /// The provided value is clamped to at least 1.
     pub fn connectivity(mut self, k: usize) -> Self {
         self.connectivity = k.max(1);
         self
     }
 
+    /// Set sparse input connectivity: number of non-zeros per row in `W_in`.
+    ///
+    /// The provided value is clamped to at least 1.
     pub fn input_connectivity(mut self, k: usize) -> Self {
         self.input_connectivity = k.max(1);
         self
     }
 
+    /// Generate dense reservoir matrices `(W_in, W_res)` and scale `W_res` to the
+    /// desired spectral radius.
+    ///
+    /// - Random entries are sampled uniformly from `[-0.5, 0.5)`.
+    /// - Spectral radius is computed from eigenvalues of the `f64`-mapped matrix.
+    /// - If the current radius is non-zero, the matrix is rescaled linearly.
     fn generate_reservoir_matrices(&self) -> (DMatrix<S>, DMatrix<S>) {
         let mut rng = RngType::seed_from_u64(self.seed);
         let uni = Uniform::new(-0.5f64, 0.5f64);
@@ -226,6 +364,9 @@ impl<S: Scalar> ESNBuilder<S> {
         (w_in, w)
     }
 
+    /// Generate a random dense readout weight matrix.
+    ///
+    /// Values are sampled uniformly from `[-0.5, 0.5)`.
     fn generate_readout_matrix(&self, input_dim: usize, output_dim: usize) -> DMatrix<S> {
         let mut rng = RngType::seed_from_u64(self.seed);
         let uni = Uniform::new(-0.5f64, 0.5f64);
@@ -234,6 +375,11 @@ impl<S: Scalar> ESNBuilder<S> {
         })
     }
 
+    /// Generate a random CSR matrix with exactly `k_per_row` unique columns per row.
+    ///
+    /// - `k_per_row` is clamped to `[1, cols]`.
+    /// - Column indices in each row are sorted increasingly.
+    /// - Values are sampled uniformly from `[-0.5, 0.5)`.
     fn gen_sparse_csr(&self, rows: usize, cols: usize, k_per_row: usize) -> CsrMatrix<S> {
         let mut rng = RngType::seed_from_u64(self.seed);
         let uni = Uniform::new(-0.5f64, 0.5f64);
@@ -272,6 +418,10 @@ impl<S: Scalar> ESNBuilder<S> {
         }
     }
 
+    /// Estimate the spectral radius of a CSR matrix using power iteration.
+    ///
+    /// This computes an approximation of `|λ_max|` without forming a dense matrix.
+    /// The returned value is non-negative.
     fn estimate_rho_power_iter(&self, w: &CsrMatrix<S>, iters: usize) -> f64 {
         let n = w.nrows;
         let mut v: Vec<f64> = (0..n).map(|i| (i as f64 + 1.0) / (n as f64)).collect();
@@ -314,6 +464,7 @@ impl<S: Scalar> ESNBuilder<S> {
         (num / den).abs()
     }
 
+    /// Scale all values in a CSR matrix by a scalar factor.
     fn scale_csr(&self, w: &mut CsrMatrix<S>, scale: f64) {
         let s = S::from_f64_val(scale);
         for v in w.values.iter_mut() {
@@ -321,6 +472,12 @@ impl<S: Scalar> ESNBuilder<S> {
         }
     }
 
+    /// Build a **dense reservoir + ridge readout** ESN.
+    ///
+    /// - Initializes `W_res` and rescales it to the configured spectral radius.
+    /// - Initializes `W_in` and applies input scaling.
+    /// - Initializes a random ridge readout matrix with shape
+    ///   `(output_dim, 1 + input_dim + units)`.
     pub fn build(self) -> EchoStateNetwork<S, DenseReservoir<S>, RidgeReadout<S>> {
         let (w_in, w) = self.generate_reservoir_matrices();
 
@@ -335,6 +492,11 @@ impl<S: Scalar> ESNBuilder<S> {
         EchoStateNetwork::new(reservoir, readout)
     }
 
+    /// Build a **dense reservoir + lasso readout** ESN.
+    ///
+    /// This is identical to [`build`](ESNBuilder::build) except that the readout is
+    /// [`LassoReadout`] (weights are still initialized randomly; sparsity is induced
+    /// during training).
     pub fn build_lasso(self) -> EchoStateNetwork<S, DenseReservoir<S>, LassoReadout<S>> {
         let (w_in, w) = self.generate_reservoir_matrices();
 
@@ -349,6 +511,14 @@ impl<S: Scalar> ESNBuilder<S> {
         EchoStateNetwork::new(reservoir, readout)
     }
 
+    /// Build a **sparse reservoir + ridge readout** ESN.
+    ///
+    /// - Generates CSR `W_res` with `connectivity` non-zeros per row and rescales it
+    ///   to match the configured spectral radius (power-iteration estimate).
+    /// - Generates CSR `W_in` with `input_connectivity` non-zeros per row and scales it
+    ///   by `input_scaling`.
+    /// - Initializes a random ridge readout matrix with shape
+    ///   `(output_dim, 1 + input_dim + units)`.
     pub fn build_sparse(self) -> EchoStateNetwork<S, SparseReservoir<S>, RidgeReadout<S>> {
         let mut w = self.gen_sparse_csr(self.units, self.units, self.connectivity);
 
@@ -374,6 +544,10 @@ impl<S: Scalar> ESNBuilder<S> {
         EchoStateNetwork::new(reservoir, readout)
     }
 
+    /// Build a **sparse reservoir + lasso readout** ESN.
+    ///
+    /// This is identical to [`build_sparse`](ESNBuilder::build_sparse) except that the
+    /// readout is [`LassoReadout`].
     pub fn build_sparse_lasso(self) -> EchoStateNetwork<S, SparseReservoir<S>, LassoReadout<S>> {
         let mut w = self.gen_sparse_csr(self.units, self.units, self.connectivity);
 

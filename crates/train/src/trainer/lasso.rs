@@ -9,6 +9,20 @@ use reservoir_core::{
 };
 use reservoir_infer::LassoReadout;
 
+/// LASSO (L1) trainer for linear readouts via coordinate descent.
+///
+/// This trainer uses a simple coordinate descent loop with soft-thresholding.
+/// It builds `X^T X` and `X^T Y` from reservoir states (after `washout`)
+/// and then solves each output dimension independently.
+///
+/// # Parameters
+/// - `alpha`: L1 regularization strength
+/// - `max_iter`: maximum iterations per output dimension
+/// - `tol`: early stopping threshold (max coefficient change)
+///
+/// # Notes
+/// This implementation is intentionally small and dependency-light.
+/// For large-scale problems you may want a specialized optimizer.
 pub struct LassoTrainer<S: Scalar> {
     pub alpha: S,
     pub max_iter: usize,
@@ -26,6 +40,7 @@ impl<S: Scalar> Default for LassoTrainer<S> {
 }
 
 impl<S: Scalar> LassoTrainer<S> {
+    /// Construct with explicit hyperparameters.
     pub fn new(alpha: S, max_iter: usize, tol: S) -> Self {
         Self {
             alpha,
@@ -34,6 +49,12 @@ impl<S: Scalar> LassoTrainer<S> {
         }
     }
 
+    /// Soft-thresholding operator used by L1 regularization.
+    ///
+    /// Returns:
+    /// - `z - alpha` if `z > alpha`
+    /// - `z + alpha` if `z < -alpha`
+    /// - `0` otherwise
     fn soft_threshold(z: S, alpha: S) -> S {
         if z > alpha {
             z - alpha

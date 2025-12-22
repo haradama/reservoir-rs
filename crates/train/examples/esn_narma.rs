@@ -1,3 +1,10 @@
+//! ESN training example on the NARMA task.
+//!
+//! This example:
+//! - Generates NARMA input/target pairs
+//! - Trains on a prefix and evaluates on the suffix
+//! - Reports RMSE and R^2
+
 use reservoir_core::{rmse, rsquare};
 use reservoir_datasets::narma::{Narma, NarmaParams};
 use reservoir_train::{ESNBuilder, ESNFitRidge};
