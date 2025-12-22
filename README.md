@@ -46,6 +46,39 @@ Runs inference only using const-generic `nalgebra::SMatrix/SVector` and fixed (p
 cargo run -p reservoir-infer --example readme_smatrix_svector
 ```
 
+## Verified Environments
+
+This repository includes an `integration_test` crate to validate **static inference** (pretrained weights + no_std-friendly execution) across multiple targets.
+
+### Targets covered
+
+- **Host (std)**: native execution with `std` enabled  
+- **WASM (wasm32-wasip1)**: runs with Wasmtime  
+- **Embedded / bare-metal (no_std)** via QEMU:
+  - **ARM Cortex-M3** (`thumbv7m-none-eabi`)
+  - **ARM Cortex-M4F** (`thumbv7em-none-eabihf`)
+  - **ARM Cortex-M0** (`thumbv6m-none-eabi`)
+  - **RISC-V 32-bit** (`riscv32imac-unknown-none-elf`)
+  - **x86 32-bit** (`i686-unknown-none` via a custom JSON target)
+
+### How to run
+
+From the repository root:
+
+```bash
+cd integration_test
+make smoke
+````
+
+This will:
+
+1. Install required Rust targets (`make targets`)
+2. Run the host smoke test (`make host`)
+3. Build & run the WASM smoke test via Wasmtime (`make wasm`)
+4. Run QEMU-based no_std tests for ARM / RISC-V / x86 (`make arm_m3`, `make arm_m4f`, `make arm_m0`, `make riscv`, `make x86`)
+
+> Note: `integration_test` uses a pinned nightly toolchain (see `integration_test/rust-toolchain.toml`) and `-Z build-std=core` for bare-metal targets.
+
 ## License
 
 Apache License 2.0
