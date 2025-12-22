@@ -399,3 +399,70 @@ impl<S: Scalar> ESNBuilder<S> {
         EchoStateNetwork::new(reservoir, readout)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nalgebra::Normed;
+
+    #[test]
+    fn test_esn_builder_dense_shapes_and_ext_dim() {
+        let esn = ESNBuilder::<f64>::new(3, 2)
+            .units(10)
+            .spectral_radius(0.9)
+            .leaking_rate(0.3)
+            .seed(123)
+            .build();
+
+        assert_eq!(esn.reservoir.input_dim, 3);
+        assert_eq!(esn.reservoir.res_state.len(), 10);
+        assert_eq!(esn.reservoir.ext_state.len(), 1 + 3 + 10);
+        assert_eq!(esn.readout.output_dim, 2);
+
+        assert_eq!(esn.reservoir.w.nrows(), 10);
+        assert_eq!(esn.reservoir.w.ncols(), 10);
+        assert_eq!(esn.reservoir.w_in.nrows(), 10);
+        assert_eq!(esn.reservoir.w_in.ncols(), 3);
+    }
+
+    #[test]
+    fn test_esn_builder_dense_spectral_radius_close() {
+        let target = 1.2f64;
+        let esn = ESNBuilder::<f64>::new(2, 1)
+            .units(20)
+            .spectral_radius(target)
+            .seed(7)
+            .build();
+
+        let w_f64 = esn.reservoir.w.map(|x| x.to_f64_val());
+        let ev = w_f64.complex_eigenvalues();
+        let rho = ev.iter().map(|c| c.norm()).fold(0.0f64, |a, b| a.max(b));
+
+        assert!((rho - target).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_esn_builder_sparse_shapes_and_basic_invariants() {
+        let esn = ESNBuilder::<f64>::new(4, 1)
+            .units(30)
+            .connectivity(3)
+            .input_connectivity(2)
+            .spectral_radius(0.95)
+            .seed(42)
+            .build_sparse();
+
+        assert_eq!(esn.reservoir.input_dim, 4);
+        assert_eq!(esn.reservoir.res_state.len(), 30);
+        assert_eq!(esn.reservoir.ext_state.len(), 1 + 4 + 30);
+
+        let w = &esn.reservoir.w;
+        assert_eq!(w.row_ptr.len(), w.nrows + 1);
+        assert_eq!(*w.row_ptr.last().unwrap(), w.values.len());
+        assert_eq!(w.col_idx.len(), w.values.len());
+
+        let w_in = &esn.reservoir.w_in;
+        assert_eq!(w_in.row_ptr.len(), w_in.nrows + 1);
+        assert_eq!(*w_in.row_ptr.last().unwrap(), w_in.values.len());
+        assert_eq!(w_in.col_idx.len(), w_in.values.len());
+    }
+}

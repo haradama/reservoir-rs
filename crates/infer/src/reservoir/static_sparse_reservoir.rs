@@ -108,3 +108,77 @@ impl<'a, S: Scalar, const IN: usize, const N: usize, const EXT: usize>
         self.step(input)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nalgebra::SVector;
+
+    const EPS: f64 = 1e-12;
+
+    #[test]
+    fn test_static_csr_new_ok() {
+        // 2x2 identity: row_ptr len=3, nnz=2
+        let row_ptr: [u16; 3] = [0, 1, 2];
+        let col_idx: [u16; 2] = [0, 1];
+        let values: [f64; 2] = [1.0, 1.0];
+        let _ = StaticCsrMatrix::<f64, 2, 2>::new(&row_ptr, &col_idx, &values);
+    }
+
+    #[test]
+    #[should_panic(expected = "CSR row_ptr length mismatch")]
+    fn test_static_csr_new_rowptr_len_mismatch_panics() {
+        let row_ptr: [u16; 2] = [0, 0]; // should be ROWS+1=3
+        let col_idx: [u16; 0] = [];
+        let values: [f64; 0] = [];
+        let _ = StaticCsrMatrix::<f64, 2, 2>::new(&row_ptr, &col_idx, &values);
+    }
+
+    #[test]
+    #[should_panic(expected = "CSR col_idx/values length mismatch")]
+    fn test_static_csr_new_col_values_mismatch_panics() {
+        let row_ptr: [u16; 3] = [0, 1, 2];
+        let col_idx: [u16; 2] = [0, 1];
+        let values: [f64; 1] = [1.0];
+        let _ = StaticCsrMatrix::<f64, 2, 2>::new(&row_ptr, &col_idx, &values);
+    }
+
+    #[test]
+    #[should_panic(expected = "CSR row_ptr[ROWS] != nnz")]
+    fn test_static_csr_new_nnz_mismatch_panics() {
+        let row_ptr: [u16; 3] = [0, 1, 3]; // last says nnz=3 but actually 2
+        let col_idx: [u16; 2] = [0, 1];
+        let values: [f64; 2] = [1.0, 1.0];
+        let _ = StaticCsrMatrix::<f64, 2, 2>::new(&row_ptr, &col_idx, &values);
+    }
+
+    #[test]
+    fn test_static_sparse_reservoir_step_layout() {
+        // IN=2, N=2, EXT=5
+        // w: zero (no nnz)
+        let w_row_ptr: [u16; 3] = [0, 0, 0];
+        let w_col_idx: [u16; 0] = [];
+        let w_values: [f64; 0] = [];
+        let w = StaticCsrMatrix::<f64, 2, 2>::new(&w_row_ptr, &w_col_idx, &w_values);
+
+        // w_in: identity 2x2
+        let win_row_ptr: [u16; 3] = [0, 1, 2];
+        let win_col_idx: [u16; 2] = [0, 1];
+        let win_values: [f64; 2] = [1.0, 1.0];
+        let w_in = StaticCsrMatrix::<f64, 2, 2>::new(&win_row_ptr, &win_col_idx, &win_values);
+
+        let mut r = StaticSparseReservoir::<f64, 2, 2, 5>::create(w_in, w, 1.0);
+
+        let input = SVector::<f64, 2>::new(0.5, -0.5);
+        let s = r.step(&input);
+
+        let a0 = 0.5f64.tanh();
+        let a1 = (-0.5f64).tanh();
+
+        assert!((s[0] - 1.0).abs() < EPS);
+        assert!((s[1] - 0.5).abs() < EPS);
+        assert!((s[2] + 0.5).abs() < EPS);
+        assert!((s[3] - a0).abs() < EPS);
+        assert!((s[4] - a1).abs() < EPS);
+    }
+}

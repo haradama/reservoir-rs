@@ -123,3 +123,92 @@ where
         self.readout.predict_static(state)
     }
 }
+
+#[cfg(all(test, feature = "alloc"))]
+mod tests {
+    use super::*;
+    use alloc::vec;
+    use heapless::Vec as HVec;
+    use nalgebra::DVector;
+    use reservoir_core::types::{Input, Output, State};
+    use reservoir_core::{Readout, Reservoir};
+
+    #[derive(Debug, Clone)]
+    struct PassReservoir<S: Scalar> {
+        state: DVector<S>,
+    }
+
+    impl<S: Scalar> PassReservoir<S> {
+        fn new(dim: usize) -> Self {
+            Self {
+                state: DVector::zeros(dim),
+            }
+        }
+    }
+
+    impl<S: Scalar> Reservoir<S> for PassReservoir<S> {
+        fn reset(&mut self) {
+            self.state.fill(S::zero());
+        }
+        fn step(&mut self, input: &Input<S>) -> &State<S> {
+            self.state.copy_from(input);
+            &self.state
+        }
+        fn dim(&self) -> usize {
+            self.state.len()
+        }
+        fn state(&self) -> &State<S> {
+            &self.state
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    struct IdentityReadout;
+
+    impl<S: Scalar> Readout<S> for IdentityReadout {
+        fn predict(&self, state: &State<S>) -> Output<S> {
+            state.clone()
+        }
+        fn output_dim(&self) -> usize {
+            0
+        }
+    }
+
+    #[test]
+    fn test_esn_predict_intoinput_variants() {
+        type S = f64;
+        let reservoir = PassReservoir::<S>::new(3);
+        let readout = IdentityReadout;
+        let mut esn = EchoStateNetwork::<S, _, _>::new(reservoir, readout);
+
+        // Vec<S>
+        let out = esn.predict(vec![1.0, 2.0, 3.0]);
+        assert_eq!(out, DVector::from_vec(vec![1.0, 2.0, 3.0]));
+
+        // &[S]
+        let xs = [4.0, 5.0, 6.0];
+        let out = esn.predict(&xs[..]);
+        assert_eq!(out, DVector::from_vec(vec![4.0, 5.0, 6.0]));
+
+        // DVector<S>
+        let out = esn.predict(DVector::from_vec(vec![7.0, 8.0, 9.0]));
+        assert_eq!(out, DVector::from_vec(vec![7.0, 8.0, 9.0]));
+
+        // heapless::Vec
+        let mut hv: HVec<S, 4> = HVec::new();
+        hv.push(10.0).ok();
+        hv.push(11.0).ok();
+        hv.push(12.0).ok();
+        let out = esn.predict(hv);
+        assert_eq!(out, DVector::from_vec(vec![10.0, 11.0, 12.0]));
+    }
+
+    #[test]
+    fn test_esn_state_dim() {
+        type S = f64;
+        let reservoir = PassReservoir::<S>::new(5);
+        let readout = IdentityReadout;
+        let esn = EchoStateNetwork::<S, _, _>::new(reservoir, readout);
+        assert_eq!(esn.state_dim(), 5);
+    }
+}

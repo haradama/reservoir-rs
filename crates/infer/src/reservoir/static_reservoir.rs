@@ -47,3 +47,31 @@ impl<S: Scalar, const IN: usize, const N: usize, const EXT: usize> StaticReservo
         self.step(input)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nalgebra::{SMatrix, SVector};
+
+    const EPS: f64 = 1e-12;
+
+    #[test]
+    fn test_static_reservoir_step_layout() {
+        // IN=2, N=2, EXT=1+IN+N=5
+        let w = SMatrix::<f64, 2, 2>::zeros();
+        let w_in = SMatrix::<f64, 2, 2>::identity();
+        let mut r = StaticReservoir::<f64, 2, 2, 5>::create(w_in, w, 1.0);
+
+        let input = SVector::<f64, 2>::new(0.5, -0.5);
+        let s = r.step(&input);
+
+        let a0 = 0.5f64.tanh();
+        let a1 = (-0.5f64).tanh();
+
+        assert!((s[0] - 1.0).abs() < EPS);
+        assert!((s[1] - 0.5).abs() < EPS);
+        assert!((s[2] + 0.5).abs() < EPS);
+        assert!((s[3] - a0).abs() < EPS);
+        assert!((s[4] - a1).abs() < EPS);
+    }
+}

@@ -87,4 +87,30 @@ mod tests {
         let r2_bad = rsquare(&y_true, &y_pred_bad);
         assert!((r2_bad - (-0.2)).abs() < EPS);
     }
+
+    #[test]
+    fn test_metrics_perfect_prediction_f64() {
+        let y_true = vec![1.0, 2.0, 3.0, 4.0];
+        let y_pred = vec![1.0, 2.0, 3.0, 4.0];
+
+        assert!((mse(&y_true, &y_pred) - 0.0).abs() < EPS);
+        assert!((rmse(&y_true, &y_pred) - 0.0).abs() < EPS);
+        assert!((rsquare(&y_true, &y_pred) - 1.0).abs() < EPS);
+    }
+
+    #[test]
+    fn test_metrics_generic_f32() {
+        let y_true: Vec<f32> = vec![1.0, 2.0, 3.0, 4.0];
+        let y_pred: Vec<f32> = vec![1.1, 2.1, 2.9, 4.1];
+
+        let m = mse(&y_true, &y_pred);
+        let r = rmse(&y_true, &y_pred);
+        let n = nrmse(&y_true, &y_pred);
+        let r2 = rsquare(&y_true, &y_pred);
+
+        assert!((m - 0.01).abs() < 1e-5);
+        assert!((r - 0.1).abs() < 1e-5);
+        assert!((n - (0.1 / 3.0)).abs() < 1e-5);
+        assert!((r2 - 0.992).abs() < 1e-3);
+    }
 }

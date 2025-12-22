@@ -63,3 +63,62 @@ impl<S: Scalar> Reservoir<S> for DenseReservoir<S> {
         &self.ext_state
     }
 }
+
+#[cfg(all(test, feature = "alloc"))]
+mod tests {
+    use super::*;
+    use nalgebra::{DMatrix, DVector};
+
+    const EPS: f64 = 1e-12;
+
+    #[test]
+    fn test_dense_reservoir_step_ext_state_layout_leaking_1() {
+        // units=2, input_dim=2
+        let w = DMatrix::<f64>::zeros(2, 2);
+        let w_in = DMatrix::<f64>::from_row_slice(2, 2, &[1.0, 0.0, 0.0, 1.0]);
+        let mut r = DenseReservoir::create(w_in, w, 1.0, 2, 2);
+
+        let input = DVector::from_vec(vec![0.5, -0.5]);
+        let state = r.step(&input);
+
+        let a0 = 0.5f64.tanh();
+        let a1 = (-0.5f64).tanh();
+
+        assert_eq!(state.len(), 1 + 2 + 2);
+        assert!((state[0] - 1.0).abs() < EPS);
+        assert!((state[1] - 0.5).abs() < EPS);
+        assert!((state[2] + 0.5).abs() < EPS);
+        assert!((state[3] - a0).abs() < EPS);
+        assert!((state[4] - a1).abs() < EPS);
+    }
+
+    #[test]
+    fn test_dense_reservoir_leaking_rate_half() {
+        let w = DMatrix::<f64>::zeros(2, 2);
+        let w_in = DMatrix::<f64>::from_row_slice(2, 2, &[1.0, 0.0, 0.0, 1.0]);
+        let mut r = DenseReservoir::create(w_in, w, 0.5, 2, 2);
+
+        let input = DVector::from_vec(vec![0.5, -0.5]);
+        let _ = r.step(&input);
+
+        let a0 = 0.5f64.tanh() * 0.5;
+        let a1 = (-0.5f64).tanh() * 0.5;
+
+        assert!((r.res_state[0] - a0).abs() < EPS);
+        assert!((r.res_state[1] - a1).abs() < EPS);
+    }
+
+    #[test]
+    fn test_dense_reservoir_reset() {
+        let w = DMatrix::<f64>::identity(2, 2);
+        let w_in = DMatrix::<f64>::zeros(2, 2);
+        let mut r = DenseReservoir::create(w_in, w, 0.5, 2, 2);
+
+        let input = DVector::from_vec(vec![1.0, 1.0]);
+        let _ = r.step(&input);
+
+        r.reset();
+        assert!(r.res_state.iter().all(|&v| v == 0.0));
+        assert!(r.ext_state.iter().all(|&v| v == 0.0));
+    }
+}

@@ -24,3 +24,20 @@ impl<S: Scalar, const IN: usize, const OUT: usize> StaticReadoutTrait<S, IN, OUT
         self.predict(state)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nalgebra::{SMatrix, SVector};
+
+    #[test]
+    fn test_static_readout_predict() {
+        let w: SMatrix<f32, 2, 3> = SMatrix::from_row_slice(&[1.0, 2.0, 3.0, 0.0, 1.0, 0.5]);
+        let r = StaticReadout::<f32, 3, 2>::create(w);
+
+        let x = SVector::<f32, 3>::new(10.0, 2.0, 1.0);
+        let y = r.predict(&x);
+
+        assert_eq!(y, SVector::<f32, 2>::new(17.0, 2.5));
+    }
+}
