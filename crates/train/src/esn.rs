@@ -202,7 +202,7 @@ impl<S: Scalar> ESNBuilder<S> {
         let mut rng = RngType::seed_from_u64(self.seed);
         let uni = Uniform::new(-0.5f64, 0.5f64);
         let mut rnd =
-            |r: usize, c: usize| DMatrix::from_fn(r, c, |_, _| S::from_f64_val(rng.sample(&uni)));
+            |r: usize, c: usize| DMatrix::from_fn(r, c, |_, _| S::from_f64_val(rng.sample(uni)));
 
         let mut w = rnd(self.units, self.units);
 
@@ -230,7 +230,7 @@ impl<S: Scalar> ESNBuilder<S> {
         let mut rng = RngType::seed_from_u64(self.seed);
         let uni = Uniform::new(-0.5f64, 0.5f64);
         DMatrix::from_fn(output_dim, input_dim, |_, _| {
-            S::from_f64_val(rng.sample(&uni))
+            S::from_f64_val(rng.sample(uni))
         })
     }
 
@@ -258,7 +258,7 @@ impl<S: Scalar> ESNBuilder<S> {
 
             for &c in &chosen {
                 col_idx.push(c);
-                values.push(S::from_f64_val(rng.sample(&uni)));
+                values.push(S::from_f64_val(rng.sample(uni)));
             }
             row_ptr.push(col_idx.len());
         }
@@ -278,7 +278,7 @@ impl<S: Scalar> ESNBuilder<S> {
 
         for _ in 0..iters {
             let mut y = vec![0.0f64; n];
-            for r in 0..n {
+            for (r, y_r) in y.iter_mut().enumerate() {
                 let start = w.row_ptr[r];
                 let end = w.row_ptr[r + 1];
                 let mut acc = 0.0;
@@ -286,7 +286,7 @@ impl<S: Scalar> ESNBuilder<S> {
                     let c = w.col_idx[k];
                     acc += w.values[k].to_f64_val() * v[c];
                 }
-                y[r] = acc;
+                *y_r = acc;
             }
 
             let norm = y.iter().map(|x| x * x).sum::<f64>().sqrt();
@@ -298,7 +298,7 @@ impl<S: Scalar> ESNBuilder<S> {
         }
 
         let mut wv = vec![0.0f64; n];
-        for r in 0..n {
+        for (r, wv_r) in wv.iter_mut().enumerate() {
             let start = w.row_ptr[r];
             let end = w.row_ptr[r + 1];
             let mut acc = 0.0;
@@ -306,7 +306,7 @@ impl<S: Scalar> ESNBuilder<S> {
                 let c = w.col_idx[k];
                 acc += w.values[k].to_f64_val() * v[c];
             }
-            wv[r] = acc;
+            *wv_r = acc;
         }
 
         let num = v.iter().zip(wv.iter()).map(|(a, b)| a * b).sum::<f64>();

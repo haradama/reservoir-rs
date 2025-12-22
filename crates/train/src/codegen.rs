@@ -44,7 +44,7 @@ impl StaticModelGenerator {
         )
         .unwrap();
         writeln!(code, "use nalgebra::{{SMatrix, SVector}};").unwrap();
-        writeln!(code, "").unwrap();
+        writeln!(code).unwrap();
 
         writeln!(code, "pub const INPUT_DIM: usize = {};", input_dim).unwrap();
         writeln!(
@@ -56,7 +56,7 @@ impl StaticModelGenerator {
         writeln!(code, "pub const OUTPUT_DIM: usize = {};", output_dim).unwrap();
         writeln!(code, "pub const EXTENDED_SIZE: usize = {};", ext_size).unwrap();
         writeln!(code, "pub const LEAKING_RATE: f32 = {:.8};", leaking_rate).unwrap();
-        writeln!(code, "").unwrap();
+        writeln!(code).unwrap();
 
         writeln!(code, "pub const W_IN_NROWS: usize = {};", w_in.nrows).unwrap();
         writeln!(code, "pub const W_IN_NCOLS: usize = {};", w_in.ncols).unwrap();
@@ -64,7 +64,7 @@ impl StaticModelGenerator {
         writeln!(code, "pub const W_RES_NCOLS: usize = {};", w_res.ncols).unwrap();
         writeln!(code, "pub const W_IN_NNZ: usize = {};", w_in.values.len()).unwrap();
         writeln!(code, "pub const W_RES_NNZ: usize = {};", w_res.values.len()).unwrap();
-        writeln!(code, "").unwrap();
+        writeln!(code).unwrap();
 
         let fmt_u16 = |v: &[usize]| -> String {
             v.iter()
@@ -100,7 +100,7 @@ impl StaticModelGenerator {
             fmt_scalar(&w_in.values)
         )
         .unwrap();
-        writeln!(code, "").unwrap();
+        writeln!(code).unwrap();
 
         writeln!(
             code,
@@ -123,7 +123,7 @@ impl StaticModelGenerator {
             fmt_scalar(&w_res.values)
         )
         .unwrap();
-        writeln!(code, "").unwrap();
+        writeln!(code).unwrap();
 
         let w_out_flat: Vec<S> = w_out.iter().cloned().collect();
         writeln!(
@@ -133,7 +133,7 @@ impl StaticModelGenerator {
             fmt_scalar(&w_out_flat)
         )
         .unwrap();
-        writeln!(code, "").unwrap();
+        writeln!(code).unwrap();
 
         let state_flat: Vec<S> = initial_state.iter().cloned().collect();
         writeln!(

@@ -61,7 +61,7 @@ where
         }
 
         for i in 0..dim_x {
-            xtx[(i, i)] = xtx[(i, i)] + self.ridge;
+            xtx[(i, i)] += self.ridge;
         }
 
         let w_solved = xtx
