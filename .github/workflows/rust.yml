@@ -16,15 +16,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Rust (nightly)
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src, llvm-tools-preview
+
+      - uses: Swatinem/rust-cache@v2
+
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          # ARM: qemu-system-arm, gcc-arm-none-eabi
-          sudo apt-get install -y qemu-system-arm gcc-arm-none-eabi
+          sudo apt-get install -y \
+            pkg-config libssl-dev \
+            qemu-system-arm qemu-system-misc qemu-system-x86 \
+            gcc-arm-none-eabi
 
-      - name: Install cargo-deny
-        run: |
-          cargo install cargo-deny --locked
+      - name: Install cargo-deny and wasmtime
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny,wasmtime
 
       - name: License check (cargo-deny)
         run: |
@@ -38,8 +48,13 @@ jobs:
       - name: Smoke Test
         working-directory: crates/integration_test
         run: |
-          rustup target add thumbv7m-none-eabi thumbv7em-none-eabihf thumbv6m-none-eabi wasm32-wasip1 riscv32imac-unknown-none-elf x86_64-unknown-none
-          cargo install wasmtime-cli
+          rustup target add \
+            thumbv7m-none-eabi \
+            thumbv7em-none-eabihf \
+            thumbv6m-none-eabi \
+            wasm32-wasip1 \
+            riscv32imac-unknown-none-elf \
+            x86_64-unknown-none
 
           echo "Running Host Smoke Test..."
           cargo run --bin test_std --features std
