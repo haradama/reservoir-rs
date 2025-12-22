@@ -39,13 +39,6 @@ required-features = ["qemu"]
 test = false
 bench = false
 
-[[bin]]
-name = "test_avr"
-path = "src/bin/test_avr.rs"
-required-features = ["qemu"]
-test = false
-bench = false
-
 [dependencies]
 reservoir-core = { path = "../core", default-features = false, features = [
     "libm",
@@ -80,17 +73,6 @@ panic-semihosting = "0.6"
 panic-halt = "0.2"
 x86 = "0.52"
 
-[target.'cfg(target_arch = "avr")'.dependencies]
-panic-halt = "0.2"
-embedded-hal = "1.0"
-ufmt = "0.2"
-nb = "1.1"
-
-[target.'cfg(target_arch = "avr")'.dependencies.arduino-hal]
-git = "https://github.com/rahix/avr-hal"
-rev = "3e362624547462928a219c40f9ea8e3a64f21e5f"
-features = ["arduino-uno"]
-
 [target.'cfg(target_arch = "riscv32")'.dependencies]
 ufmt = "0.2"
 riscv = "0.11"
@@ -107,9 +89,4 @@ panic = "abort"
 codegen-units = 1
 debug = true
 lto = true
-opt-level = "s"
-
-[profile.avr]
-inherits = "dev"
-panic = "abort"
 opt-level = "s"

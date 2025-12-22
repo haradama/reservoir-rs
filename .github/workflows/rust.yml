@@ -19,10 +19,8 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          # AVR: qemu-system-avr, gcc-avr, avr-libc
           # ARM: qemu-system-arm, gcc-arm-none-eabi
-          sudo apt-get install -y qemu-system-avr gcc-avr avr-libc \
-                                  qemu-system-arm gcc-arm-none-eabi
+          sudo apt-get install -y qemu-system-arm gcc-arm-none-eabi
 
       - name: Install cargo-deny
         run: |
@@ -69,7 +67,3 @@ jobs:
           # --- x86 32-bit ---
           echo "Running x86 32-bit Smoke Test..."
           cargo run --bin test_x86 --target i686-unknown-none.json --features qemu -Z build-std=core
-
-          # --- AVR (ATmega328P) ---
-          # echo "Running AVR Smoke Test..."
-          # cargo run --profile avr --bin test_avr -target avr-atmega328p.json --features qemu -Z build-std=core

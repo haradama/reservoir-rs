@@ -67,14 +67,3 @@ runner = [
     "none",
     "-kernel",
 ]
-
-[target.'cfg(target_arch = "avr")']
-rustflags = ["-C", "target-cpu=atmega328p"]
-runner = [
-    "./tools/qemu-runner.py",
-    "qemu-system-avr",
-    "-machine",
-    "arduino-uno",
-    "-nographic",
-    "-kernel",
-]
