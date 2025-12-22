@@ -13,7 +13,7 @@ use reservoir_infer::RidgeReadout;
 ///
 /// This trainer accumulates:
 /// - `X^T X` and `X^T Y` from reservoir states (after `washout`)
-/// then solves:
+///   then solves:
 /// - `(X^T X + ridge * I) W = X^T Y`
 ///
 /// The readout stores weights as `W_out` (output_dim x state_dim),
