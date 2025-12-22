@@ -35,6 +35,6 @@ test:
 check: fmt clippy licenses test
 
 smoke:
-	$$(MAKE) -C integration_test smoke
+	$(MAKE) -C integration_test smoke
 
 ci: check build smoke
