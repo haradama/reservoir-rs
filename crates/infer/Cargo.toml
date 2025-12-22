@@ -1,5 +1,6 @@
 [package]
 name = "reservoir-infer"
+description = "Inference-time building blocks for Echo State Networks: reservoirs and readouts (dense/sparse, dynamic/static) built on reservoir-core."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

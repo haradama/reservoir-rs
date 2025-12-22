@@ -1,5 +1,6 @@
 [package]
 name = "reservoir-train"
+description = "Training utilities for Echo State Networks: ridge/lasso readout solvers, ESN builder helpers, and optional static code generation for embedded inference."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -38,4 +39,4 @@ rand = { version = "0.8", default-features = false, features = [
 num-traits = { version = "0.2.19", default-features = false }
 
 [dev-dependencies]
-reservoir-datasets = { path = "../datasets" }
+reservoir-datasets = { workspace = true }

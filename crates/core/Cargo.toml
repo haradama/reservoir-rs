@@ -1,5 +1,6 @@
 [package]
 name = "reservoir-core"
+description = "Core traits, types, and metrics for reservoir computing (ESN). Supports optional no_std/alloc via feature flags."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
