@@ -40,19 +40,19 @@ test = false
 bench = false
 
 [dependencies]
-reservoir-core = {  workspace = true, default-features = false, features = [
+reservoir-core = {  path = "../crates/core", default-features = false, features = [
     "libm",
 ] }
-reservoir-infer = {  workspace = true, default-features = false, features = [
+reservoir-infer = {  path = "../crates/infer", default-features = false, features = [
     "libm",
 ] }
 nalgebra = { version = "0.33.2", default-features = false, features = ["libm"] }
 heapless = "0.9.2"
 
 [build-dependencies]
-reservoir-core = {  workspace = true, features = ["std"] }
-reservoir-train = {  workspace = true, features = ["std"] }
-reservoir-datasets = { workspace = true, features = ["std"] }
+reservoir-core = {  path = "../crates/core", features = ["std"] }
+reservoir-train = {  path = "../crates/train", features = ["std"] }
+reservoir-datasets = { path = "../crates/datasets", features = ["std"] }
 nalgebra = { version = "0.33.2", features = ["std"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
