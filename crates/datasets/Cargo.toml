@@ -8,7 +8,7 @@ readme.workspace = true
 repository = "https://github.com/haradama/reservoir-rs/tree/main/crates/datasets"
 documentation = "https://docs.rs/reservoir-datasets"
 homepage = "https://github.com/haradama/reservoir-rs/tree/main/crates/datasets"
-keywords = ["reservoir", "echo state network", "machine-learning", "data"]
+keywords = ["reservoir", "machine-learning", "data"]
 
 [features]
 default = ["std"]
