@@ -45,7 +45,9 @@ pub use esn::{ESNBuilder, ESNFitLasso, ESNFitRidge};
 /// This is convenient when `reservoir-train` is used as the training entry point.
 pub use reservoir_infer;
 
-pub use reservoir_infer::{DenseReservoir, EchoStateNetwork, LassoReadout, RidgeReadout};
+pub use reservoir_infer::{
+    DenseReservoir, EchoStateNetwork, LassoReadout, LinearReadout, RidgeReadout,
+};
 pub use trainer::RidgeTrainer;
 
 /// RNG type used internally by [`ESNBuilder`].

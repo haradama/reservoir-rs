@@ -9,9 +9,14 @@
 #[cfg(feature = "alloc")]
 pub mod lasso;
 #[cfg(feature = "alloc")]
+pub mod linear;
+#[cfg(feature = "alloc")]
 pub mod ridge;
 pub mod static_readout;
 
+#[cfg(feature = "alloc")]
+pub use linear::LinearReadout;
+// `RidgeReadout` / `LassoReadout` are backwards-compatible aliases for `LinearReadout`.
 #[cfg(feature = "alloc")]
 pub use lasso::LassoReadout;
 #[cfg(feature = "alloc")]

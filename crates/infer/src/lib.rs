@@ -73,7 +73,7 @@ pub mod reservoir;
 pub use esn::EchoStateNetwork;
 
 #[cfg(feature = "alloc")]
-pub use readout::{LassoReadout, RidgeReadout};
+pub use readout::{LassoReadout, LinearReadout, RidgeReadout};
 
 #[cfg(feature = "alloc")]
 pub use reservoir::{DenseReservoir, SparseReservoir};

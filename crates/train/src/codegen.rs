@@ -1,6 +1,6 @@
 use crate::float::RealScalar;
 use reservoir_core::types::Scalar;
-use reservoir_infer::{EchoStateNetwork, LassoReadout, RidgeReadout, SparseReservoir};
+use reservoir_infer::{EchoStateNetwork, LinearReadout, SparseReservoir};
 use std::fmt::Write;
 
 /// Static model code generation utilities.
@@ -236,9 +236,10 @@ impl StaticModelGenerator {
 /// Trait for accessing readout weights as a dense matrix.
 ///
 /// The code generator needs a uniform way to retrieve the output weight matrix
-/// (`W_out`) from different readout implementations.
+/// (`W_out`) from a readout.
 ///
-/// Implementations are provided for [`RidgeReadout`] and [`LassoReadout`].
+/// Implemented for [`LinearReadout`] (and therefore for its `RidgeReadout` /
+/// `LassoReadout` aliases).
 pub trait GetWeights<S: Scalar> {
     /// Borrow the readout weight matrix.
     ///
@@ -247,13 +248,7 @@ pub trait GetWeights<S: Scalar> {
     fn weights(&self) -> &nalgebra::DMatrix<S>;
 }
 
-impl<S: Scalar> GetWeights<S> for RidgeReadout<S> {
-    fn weights(&self) -> &nalgebra::DMatrix<S> {
-        &self.w_out
-    }
-}
-
-impl<S: Scalar> GetWeights<S> for LassoReadout<S> {
+impl<S: Scalar> GetWeights<S> for LinearReadout<S> {
     fn weights(&self) -> &nalgebra::DMatrix<S> {
         &self.w_out
     }
