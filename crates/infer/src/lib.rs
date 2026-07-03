@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![forbid(unsafe_code)]
 
 //! Inference-time building blocks for Echo State Networks (ESN).
 //!

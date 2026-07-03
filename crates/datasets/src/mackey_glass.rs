@@ -106,16 +106,28 @@ impl MackeyGlass {
     ///   - without `std`: falls back to a fixed seed (`42`) for reproducibility.
     ///
     /// # Panics
-    /// If `params.history` is provided but shorter than `ceil(tau/h)`,
-    /// slicing will panic. (Consider validating this in a future revision.)
+    /// Panics if `ceil(tau/h) == 0`, or if `params.history` is provided but has
+    /// fewer than `ceil(tau/h)` samples. Both are checked up front with a
+    /// descriptive message.
     pub fn new(params: MackeyGlassParams) -> Self {
         // Number of discrete steps required to represent the delay tau with step size h.
         let history_len = (params.tau as f64 / params.h).ceil() as usize;
+        assert!(
+            history_len > 0,
+            "MackeyGlass: tau/h must yield a delay line of at least one sample (got tau={}, h={})",
+            params.tau,
+            params.h
+        );
         let mut history = VecDeque::with_capacity(history_len);
 
         if let Some(hist) = &params.history {
             // Use the tail of the provided history as the initial delay line.
-            // Assumes hist is long enough; otherwise this slice will panic.
+            assert!(
+                hist.len() >= history_len,
+                "MackeyGlass: provided history has {} samples but needs at least ceil(tau/h) = {}",
+                hist.len(),
+                history_len
+            );
             history.extend(hist[hist.len() - history_len..].iter().cloned());
         } else {
             // Initialize the delay line with small noise around x0.
@@ -224,6 +236,24 @@ mod tests {
         let mut mg = MackeyGlass::new(params);
         let data = mg.generate();
         assert_eq!(data.len(), 100);
+    }
+
+    #[test]
+    #[should_panic(expected = "at least")]
+    fn test_mackey_glass_short_history_panics() {
+        let params = MackeyGlassParams {
+            a: 0.2,
+            b: 0.1,
+            n: 10,
+            tau: 17,
+            x0: 1.2,
+            h: 0.1,
+            steps: 10,
+            seed: Some(1),
+            // needs ceil(17 / 0.1) = 170 samples, provide far fewer
+            history: Some(alloc::vec![1.2; 5]),
+        };
+        let _ = MackeyGlass::new(params);
     }
 
     #[cfg(feature = "std")]

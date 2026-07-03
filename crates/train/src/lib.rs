@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![forbid(unsafe_code)]
 
 //! Training utilities for Echo State Networks (ESN).
 //!

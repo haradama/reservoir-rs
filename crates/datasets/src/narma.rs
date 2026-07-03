@@ -98,11 +98,15 @@ impl Narma {
     ///   to keep output deterministic across runs.
     ///
     /// # Panics
-    /// If `params.n == 0`, `VecDeque::with_capacity(0)` is fine, but later
-    /// indexing/`back().unwrap()` in [`step`](Narma::step) will panic.
-    /// (Consider validating `n >= 1` if you want a stricter public API.)
+    /// Panics if `params.n == 0`, since the recurrence in [`step`](Narma::step)
+    /// reads the last of `n` outputs. This is checked up front with a descriptive
+    /// message instead of failing later on an empty history buffer.
     pub fn new(params: NarmaParams) -> Self {
         let n = params.n;
+        assert!(
+            n >= 1,
+            "Narma: order `n` must be at least 1 (the recurrence reads the last of `n` outputs)"
+        );
 
         // Initialize histories with zeros so early steps are well-defined.
         let mut y_history = VecDeque::with_capacity(n);
@@ -220,6 +224,16 @@ mod tests {
         assert_eq!(narma.u_history.len(), 5);
         assert!(narma.y_history.iter().all(|&v| v == 0.0));
         assert!(narma.u_history.iter().all(|&v| v == 0.0));
+    }
+
+    #[test]
+    #[should_panic(expected = "at least 1")]
+    fn test_narma_zero_order_panics() {
+        let params = NarmaParams {
+            n: 0,
+            ..Default::default()
+        };
+        let _ = Narma::new(params);
     }
 
     #[test]

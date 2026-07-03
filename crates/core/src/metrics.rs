@@ -4,17 +4,23 @@ use num_traits::Float;
 /// Mean Squared Error (MSE).
 ///
 /// # Panics
-/// Panics if `y_true.len() == 0`.
-/// (Division by zero)
+/// Panics if `y_true` is empty, or if `y_true.len() != y_pred.len()`.
 ///
-/// # Notes
-/// This function assumes `y_true.len() == y_pred.len()`.
-/// If lengths differ, extra elements are ignored due to `zip`.
+/// The length check is deliberate: relying on `zip` to truncate to the shorter
+/// slice while dividing by `y_true.len()` would silently return a wrong value on
+/// mismatched inputs.
 #[must_use]
 pub fn mse<T>(y_true: &[T], y_pred: &[T]) -> T
 where
     T: Float + Sum<T>,
 {
+    assert_eq!(
+        y_true.len(),
+        y_pred.len(),
+        "mse: y_true and y_pred must have the same length"
+    );
+    assert!(!y_true.is_empty(), "mse: inputs must be non-empty");
+
     y_true
         .iter()
         .zip(y_pred)
@@ -26,7 +32,7 @@ where
 /// Root Mean Squared Error (RMSE) = sqrt(MSE).
 ///
 /// # Panics
-/// Panics if `y_true.len() == 0`.
+/// Panics if `y_true` is empty, or if `y_true.len() != y_pred.len()`.
 #[must_use]
 pub fn rmse<T>(y_true: &[T], y_pred: &[T]) -> T
 where
@@ -38,7 +44,7 @@ where
 /// Normalized RMSE using `(max(y_true) - min(y_true))`.
 ///
 /// # Panics
-/// Panics if `y_true.len() == 0`.
+/// Panics if `y_true` is empty, or if `y_true.len() != y_pred.len()`.
 ///
 /// # Notes
 /// If all `y_true` values are equal, range becomes zero and the result
@@ -60,7 +66,7 @@ where
 /// `R² = 1 - SS_res / SS_tot`.
 ///
 /// # Panics
-/// Panics if `y_true.len() == 0`.
+/// Panics if `y_true` is empty, or if `y_true.len() != y_pred.len()`.
 ///
 /// # Notes
 /// If `SS_tot == 0` (constant target), the result becomes `nan` / `inf`.
@@ -69,6 +75,13 @@ pub fn rsquare<T>(y_true: &[T], y_pred: &[T]) -> T
 where
     T: Float + Sum<T>,
 {
+    assert_eq!(
+        y_true.len(),
+        y_pred.len(),
+        "rsquare: y_true and y_pred must have the same length"
+    );
+    assert!(!y_true.is_empty(), "rsquare: inputs must be non-empty");
+
     let mean = y_true.iter().copied().sum::<T>() / T::from(y_true.len()).unwrap();
     let ss_tot: T = y_true.iter().map(|&v| (v - mean).powi(2)).sum();
     let ss_res: T = y_true
@@ -146,5 +159,28 @@ mod tests {
         assert!((r - 0.1).abs() < 1e-5);
         assert!((n - (0.1 / 3.0)).abs() < 1e-5);
         assert!((r2 - 0.992).abs() < 1e-3);
+    }
+
+    #[test]
+    #[should_panic(expected = "same length")]
+    fn test_mse_length_mismatch_panics() {
+        let y_true = vec![1.0, 2.0, 3.0];
+        let y_pred = vec![1.0, 2.0];
+        let _ = mse(&y_true, &y_pred);
+    }
+
+    #[test]
+    #[should_panic(expected = "non-empty")]
+    fn test_mse_empty_panics() {
+        let empty: Vec<f64> = vec![];
+        let _ = mse(&empty, &empty);
+    }
+
+    #[test]
+    #[should_panic(expected = "same length")]
+    fn test_rsquare_length_mismatch_panics() {
+        let y_true = vec![1.0, 2.0, 3.0];
+        let y_pred = vec![1.0, 2.0];
+        let _ = rsquare(&y_true, &y_pred);
     }
 }

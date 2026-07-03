@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![forbid(unsafe_code)]
 //! Core traits and utilities for reservoir computing / Echo State Networks.
 //!
 //! # Design

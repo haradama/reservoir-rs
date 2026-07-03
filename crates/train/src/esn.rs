@@ -341,13 +341,16 @@ impl<S: Scalar> ESNBuilder<S> {
     /// - Random entries are sampled uniformly from `[-0.5, 0.5)`.
     /// - Spectral radius is computed from eigenvalues of the `f64`-mapped matrix.
     /// - If the current radius is non-zero, the matrix is rescaled linearly.
-    fn generate_reservoir_matrices(&self) -> (DMatrix<S>, DMatrix<S>) {
-        let mut rng = RngType::seed_from_u64(self.seed);
+    ///
+    /// The caller supplies the RNG so that `W_res`, `W_in`, and the readout weights
+    /// all draw from a single deterministic stream instead of each re-seeding from
+    /// the same value (which would make the matrices correlated).
+    fn generate_reservoir_matrices(&self, rng: &mut RngType) -> (DMatrix<S>, DMatrix<S>) {
         let uni = Uniform::new(-0.5f64, 0.5f64);
-        let mut rnd =
-            |r: usize, c: usize| DMatrix::from_fn(r, c, |_, _| S::from_f64_val(rng.sample(uni)));
 
-        let mut w = rnd(self.units, self.units);
+        let mut w = DMatrix::from_fn(self.units, self.units, |_, _| {
+            S::from_f64_val(rng.sample(uni))
+        });
 
         let w_f64 = w.map(|x| x.to_f64_val());
         let eigenvalues = w_f64.complex_eigenvalues();
@@ -364,16 +367,22 @@ impl<S: Scalar> ESNBuilder<S> {
             w *= S::from_f64_val(scale);
         }
 
-        let w_in = rnd(self.units, self.input_dim) * self.input_scaling;
+        let w_in = DMatrix::from_fn(self.units, self.input_dim, |_, _| {
+            S::from_f64_val(rng.sample(uni))
+        }) * self.input_scaling;
 
         (w_in, w)
     }
 
     /// Generate a random dense readout weight matrix.
     ///
-    /// Values are sampled uniformly from `[-0.5, 0.5)`.
-    fn generate_readout_matrix(&self, input_dim: usize, output_dim: usize) -> DMatrix<S> {
-        let mut rng = RngType::seed_from_u64(self.seed);
+    /// Values are sampled uniformly from `[-0.5, 0.5)`, drawn from the shared RNG.
+    fn generate_readout_matrix(
+        &self,
+        rng: &mut RngType,
+        input_dim: usize,
+        output_dim: usize,
+    ) -> DMatrix<S> {
         let uni = Uniform::new(-0.5f64, 0.5f64);
         DMatrix::from_fn(output_dim, input_dim, |_, _| {
             S::from_f64_val(rng.sample(uni))
@@ -384,9 +393,14 @@ impl<S: Scalar> ESNBuilder<S> {
     ///
     /// - `k_per_row` is clamped to `[1, cols]`.
     /// - Column indices in each row are sorted increasingly.
-    /// - Values are sampled uniformly from `[-0.5, 0.5)`.
-    fn gen_sparse_csr(&self, rows: usize, cols: usize, k_per_row: usize) -> CsrMatrix<S> {
-        let mut rng = RngType::seed_from_u64(self.seed);
+    /// - Values are sampled uniformly from `[-0.5, 0.5)`, drawn from the shared RNG.
+    fn gen_sparse_csr(
+        &self,
+        rng: &mut RngType,
+        rows: usize,
+        cols: usize,
+        k_per_row: usize,
+    ) -> CsrMatrix<S> {
         let uni = Uniform::new(-0.5f64, 0.5f64);
 
         let k = k_per_row.min(cols).max(1);
@@ -484,13 +498,14 @@ impl<S: Scalar> ESNBuilder<S> {
     /// - Initializes a random ridge readout matrix with shape
     ///   `(output_dim, 1 + input_dim + units)`.
     pub fn build(self) -> EchoStateNetwork<S, DenseReservoir<S>, RidgeReadout<S>> {
-        let (w_in, w) = self.generate_reservoir_matrices();
+        let mut rng = RngType::seed_from_u64(self.seed);
+        let (w_in, w) = self.generate_reservoir_matrices(&mut rng);
 
         let reservoir =
             DenseReservoir::create(w_in, w, self.leaking_rate, self.input_dim, self.units);
 
         let reservoir_output_dim = reservoir.dim();
-        let w_out = self.generate_readout_matrix(reservoir_output_dim, self.output_dim);
+        let w_out = self.generate_readout_matrix(&mut rng, reservoir_output_dim, self.output_dim);
 
         let readout = RidgeReadout::create(w_out);
 
@@ -503,13 +518,14 @@ impl<S: Scalar> ESNBuilder<S> {
     /// [`LassoReadout`] (weights are still initialized randomly; sparsity is induced
     /// during training).
     pub fn build_lasso(self) -> EchoStateNetwork<S, DenseReservoir<S>, LassoReadout<S>> {
-        let (w_in, w) = self.generate_reservoir_matrices();
+        let mut rng = RngType::seed_from_u64(self.seed);
+        let (w_in, w) = self.generate_reservoir_matrices(&mut rng);
 
         let reservoir =
             DenseReservoir::create(w_in, w, self.leaking_rate, self.input_dim, self.units);
 
         let reservoir_output_dim = reservoir.dim();
-        let w_out = self.generate_readout_matrix(reservoir_output_dim, self.output_dim);
+        let w_out = self.generate_readout_matrix(&mut rng, reservoir_output_dim, self.output_dim);
 
         let readout = LassoReadout::create(w_out);
 
@@ -525,7 +541,8 @@ impl<S: Scalar> ESNBuilder<S> {
     /// - Initializes a random ridge readout matrix with shape
     ///   `(output_dim, 1 + input_dim + units)`.
     pub fn build_sparse(self) -> EchoStateNetwork<S, SparseReservoir<S>, RidgeReadout<S>> {
-        let mut w = self.gen_sparse_csr(self.units, self.units, self.connectivity);
+        let mut rng = RngType::seed_from_u64(self.seed);
+        let mut w = self.gen_sparse_csr(&mut rng, self.units, self.units, self.connectivity);
 
         let rho = self.estimate_rho_power_iter(&w, 50);
         let target = self.spectral_radius.to_f64_val();
@@ -533,7 +550,12 @@ impl<S: Scalar> ESNBuilder<S> {
             self.scale_csr(&mut w, target / rho);
         }
 
-        let mut w_in = self.gen_sparse_csr(self.units, self.input_dim, self.input_connectivity);
+        let mut w_in = self.gen_sparse_csr(
+            &mut rng,
+            self.units,
+            self.input_dim,
+            self.input_connectivity,
+        );
 
         let s_in = self.input_scaling.to_f64_val();
         if s_in != 1.0 {
@@ -543,7 +565,7 @@ impl<S: Scalar> ESNBuilder<S> {
         let reservoir = SparseReservoir::create(w_in, w, self.leaking_rate, self.input_dim);
 
         let reservoir_output_dim = reservoir.dim();
-        let w_out = self.generate_readout_matrix(reservoir_output_dim, self.output_dim);
+        let w_out = self.generate_readout_matrix(&mut rng, reservoir_output_dim, self.output_dim);
         let readout = RidgeReadout::create(w_out);
 
         EchoStateNetwork::new(reservoir, readout)
@@ -554,7 +576,8 @@ impl<S: Scalar> ESNBuilder<S> {
     /// This is identical to [`build_sparse`](ESNBuilder::build_sparse) except that the
     /// readout is [`LassoReadout`].
     pub fn build_sparse_lasso(self) -> EchoStateNetwork<S, SparseReservoir<S>, LassoReadout<S>> {
-        let mut w = self.gen_sparse_csr(self.units, self.units, self.connectivity);
+        let mut rng = RngType::seed_from_u64(self.seed);
+        let mut w = self.gen_sparse_csr(&mut rng, self.units, self.units, self.connectivity);
 
         let rho = self.estimate_rho_power_iter(&w, 50);
         let target = self.spectral_radius.to_f64_val();
@@ -562,7 +585,12 @@ impl<S: Scalar> ESNBuilder<S> {
             self.scale_csr(&mut w, target / rho);
         }
 
-        let mut w_in = self.gen_sparse_csr(self.units, self.input_dim, self.input_connectivity);
+        let mut w_in = self.gen_sparse_csr(
+            &mut rng,
+            self.units,
+            self.input_dim,
+            self.input_connectivity,
+        );
 
         let s_in = self.input_scaling.to_f64_val();
         if s_in != 1.0 {
@@ -572,7 +600,7 @@ impl<S: Scalar> ESNBuilder<S> {
         let reservoir = SparseReservoir::create(w_in, w, self.leaking_rate, self.input_dim);
 
         let reservoir_output_dim = reservoir.dim();
-        let w_out = self.generate_readout_matrix(reservoir_output_dim, self.output_dim);
+        let w_out = self.generate_readout_matrix(&mut rng, reservoir_output_dim, self.output_dim);
         let readout = LassoReadout::create(w_out);
 
         EchoStateNetwork::new(reservoir, readout)
@@ -583,6 +611,38 @@ impl<S: Scalar> ESNBuilder<S> {
 mod tests {
     use super::*;
     use nalgebra::Normed;
+
+    #[test]
+    fn test_esn_builder_is_deterministic_by_seed() {
+        // A single shared RNG per build must still be fully reproducible: the same
+        // seed has to reproduce identical reservoir and readout weights.
+        let build = || {
+            ESNBuilder::<f64>::new(2, 1)
+                .units(16)
+                .connectivity(4)
+                .input_connectivity(2)
+                .seed(2024)
+                .build_sparse()
+        };
+        let a = build();
+        let b = build();
+
+        assert_eq!(a.reservoir.w.values, b.reservoir.w.values);
+        assert_eq!(a.reservoir.w.col_idx, b.reservoir.w.col_idx);
+        assert_eq!(a.reservoir.w_in.values, b.reservoir.w_in.values);
+        assert_eq!(a.readout.w_out, b.readout.w_out);
+    }
+
+    #[test]
+    fn test_esn_builder_dense_is_deterministic_by_seed() {
+        let build = || ESNBuilder::<f64>::new(2, 1).units(12).seed(555).build();
+        let a = build();
+        let b = build();
+
+        assert_eq!(a.reservoir.w, b.reservoir.w);
+        assert_eq!(a.reservoir.w_in, b.reservoir.w_in);
+        assert_eq!(a.readout.w_out, b.readout.w_out);
+    }
 
     #[test]
     fn test_esn_builder_dense_shapes_and_ext_dim() {
