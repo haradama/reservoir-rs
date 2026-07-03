@@ -71,6 +71,43 @@ Runs inference only using const-generic `nalgebra::SMatrix/SVector` and fixed (p
 cargo run -p reservoir-infer --example readme_smatrix_svector
 ```
 
+## Deploying a trained model (train → infer-only)
+
+A model built with `reservoir-train` is already composed entirely of
+`reservoir-infer` types (`EchoStateNetwork`, `DenseReservoir`/`SparseReservoir`,
+`LinearReadout`). To ship inference **without** the training crate, export the
+trained weights as a self-contained static module and consume it from a crate
+that depends only on `reservoir-infer`:
+
+1. **Train**, then **generate** a static module with
+   [`StaticModelGenerator`](https://docs.rs/reservoir-train):
+   - `generate_dense_code(&esn)` for a dense reservoir,
+   - `generate_sparse_code(&esn)` for a sparse (CSR) reservoir.
+
+   ```bash
+   # Train an ESN and write the generated module to model.rs
+   cargo run -p reservoir-train --example export_static_dense  > model.rs   # dense
+   cargo run -p reservoir-train --example export_static_sparse > model.rs   # sparse (CSR)
+   ```
+
+2. **Deploy**: drop `model.rs` into an inference crate whose only dependency is
+   `reservoir-infer` (+ `nalgebra`). Both generators emit ready-to-use
+   `build()` / `step()` helpers, so no const-generic wiring is needed:
+
+   ```rust,ignore
+   mod model; // the generated file
+   use nalgebra::SVector;
+
+   let mut esn = model::build();                    // StaticESN, no_std-friendly
+   let y = model::step(&mut esn, &SVector::<f32, 1>::new(0.5));
+   ```
+
+The generated module uses the static (`no_std`) `StaticReservoir` /
+`StaticReadout` / `StaticESN` types, so the inference build needs neither
+`reservoir-train` nor heap allocation. Weights are emitted in column-major order
+and rebuilt via `nalgebra::from_column_slice`; the static forward pass reproduces
+the trained dynamic model (verified in `reservoir-train`'s tests).
+
 ## Verified Environments
 
 This repository includes an `integration_test` crate to validate **static inference** (pretrained weights + no_std-friendly execution) across multiple targets.
