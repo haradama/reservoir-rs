@@ -12,7 +12,12 @@
 
 extern crate alloc;
 use alloc::vec::Vec;
+// `powi` is an inherent `f64` method under `std`, but on `no_std` it comes from
+// `num_traits::Float`. Whether the trait is needed depends on how `num-traits`
+// features unify across the build, so allow the import to be unused rather than
+// warn in configurations where the inherent method wins.
 #[cfg(not(feature = "std"))]
+#[allow(unused_imports)]
 use num_traits::Float;
 
 /// Parameters for the Hénon map.

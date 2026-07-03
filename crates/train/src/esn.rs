@@ -5,7 +5,12 @@ use crate::{
 };
 use alloc::vec::Vec;
 use core::marker::PhantomData;
+// `estimate_rho_power_iter` calls `f64::sqrt`/`f64::abs`; these are inherent
+// methods under `std` but come from `num_traits::Float` on `no_std` targets.
 use nalgebra::{DMatrix, DVector, Normed};
+#[cfg(not(feature = "std"))]
+#[allow(unused_imports)]
+use num_traits::Float;
 use rand::RngCore;
 use rand::{distributions::Uniform, Rng, SeedableRng};
 use reservoir_core::{types::*, Input, Output, Reservoir, Trainer};
@@ -427,7 +432,7 @@ impl<S: Scalar> ESNBuilder<S> {
         let mut v: Vec<f64> = (0..n).map(|i| (i as f64 + 1.0) / (n as f64)).collect();
 
         for _ in 0..iters {
-            let mut y = vec![0.0f64; n];
+            let mut y = alloc::vec![0.0f64; n];
             for (r, y_r) in y.iter_mut().enumerate() {
                 let start = w.row_ptr[r];
                 let end = w.row_ptr[r + 1];
@@ -447,7 +452,7 @@ impl<S: Scalar> ESNBuilder<S> {
             }
         }
 
-        let mut wv = vec![0.0f64; n];
+        let mut wv = alloc::vec![0.0f64; n];
         for (r, wv_r) in wv.iter_mut().enumerate() {
             let start = w.row_ptr[r];
             let end = w.row_ptr[r + 1];

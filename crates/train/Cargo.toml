@@ -19,9 +19,15 @@ std = [
     "rand/std",
     "rand/std_rng",
 ]
+# `reservoir-train` always builds matrices/vectors, so it requires `alloc` from
+# `reservoir-core`/`reservoir-infer` even on `no_std`. The `libm` feature is the
+# supported `no_std` configuration and pulls in that `alloc` support explicitly
+# (`reservoir-infer/libm` does not enable `alloc` on its own).
 libm = [
     "reservoir-core/libm",
+    "reservoir-core/alloc",
     "reservoir-infer/libm",
+    "reservoir-infer/alloc",
     "nalgebra/libm",
     "num-traits/libm",
 ]

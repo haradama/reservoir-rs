@@ -232,10 +232,8 @@ dependencies = [
 name = "reservoir-datasets"
 version = "0.1.0"
 dependencies = [
- "heapless",
  "num-traits",
  "rand",
- "reservoir-core",
 ]
 
 [[package]]

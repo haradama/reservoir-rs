@@ -26,6 +26,31 @@ This project focuses on:
 - **Datasets**: synthetic time-series generators (for quick experiments)
 - **Embedded/QEMU tests**: optional no_std inference checks on emulated targets
 
+## Feature flags & `no_std`
+
+Every crate defaults to `std`. For `no_std` / embedded targets you must select a
+floating-point backend explicitly, because `Scalar::activation`, the `metrics`
+module, and the reservoir updates all rely on `tanh` / `powi` / `sqrt`:
+
+| Feature | Effect |
+| ------- | ------ |
+| `std` (default) | Standard library + heap types (implies `alloc`). |
+| `libm` | Provides the float math used on `no_std` targets. **Required** for any `no_std` build. |
+| `alloc` | Adds heap-backed `nalgebra` types. Does **not** provide math on its own — pair it with `libm`. |
+
+Typical `no_std` configurations:
+
+```bash
+# Static-only inference (no heap):
+cargo build -p reservoir-infer --no-default-features --features libm
+# Dynamic inference / training on no_std (heap + math):
+cargo build -p reservoir-train --no-default-features --features libm
+```
+
+Selecting neither `std` nor `libm` fails fast with a clear compile error rather
+than an obscure "unresolved import `num_traits::Float`". Run `make features` to
+check every supported combination locally.
+
 ## Examples
 
 This workspace includes two small README-oriented examples that demonstrate the same ESN idea in two styles:
